@@ -9,7 +9,7 @@ This directory contains the 8 custom KDE Plasma 6 QML applets and desktop contai
 | Directory | Plugin ID | Context | Role & Features |
 |---|---|---|---|
 | `Desktop/` | `org.kde.desktopcontainment` | Desktop Containment | Custom desktop containment with Material 3 Expressive right-click context menu, live wallpaper carousel, optical grid alignment for app folders, and simplified widget overlay (`Configure` + `Remove`). |
-| `Dock/` | `org.doodlebookos.dock` | Bottom Panel (`52 dp`) | ChromeOS-style shelf dock with centered task manager, integrated KRunner-powered app/web/command launcher, and KDE Connect Phone Hub popup. |
+| `Dock/` | `org.doodlebookos.dock` | Bottom Panel (`52 dp`) | GooglebookOS-style shelf dock with centered task manager, integrated KRunner-powered app/web/command launcher, and KDE Connect Phone Hub popup. |
 | `DateTime/` | `org.doodlebookos.datetime` | Top Panel (`32 dp`) | Top-left date & time pill with adaptive wallpaper contrast and a clean single-column Material You monthly calendar popup. |
 | `StatusCluster/` | `org.doodlebookos.statuscluster` | Top Panel (`32 dp`) | Unified top-right status cluster combining media player controls, notification center (`org.kde.plasma.notifications`), and Quick Settings drawer (Wi-Fi, Bluetooth, Dark Mode, Power Profiles, Do Not Disturb, Mic, Screenshot, Quick Share). |
 | `PanelSpacer/` | `org.doodlebookos.panelspacer` | Top & Bottom Panels | Flexible panel spacer with custom taskbar context menu integration. |

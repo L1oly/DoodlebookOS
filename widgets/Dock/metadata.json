@@ -15,7 +15,7 @@
             }
         ],
         "Category": "Windows and Tasks",
-        "Description": "ChromeOS-style shelf dock with launcher and Phone Hub",
+        "Description": "GooglebookOS-style shelf dock with launcher and Phone Hub",
         "Icon": "preferences-system-windows",
         "Id": "org.doodlebookos.dock",
         "License": "GPL-3.0-or-later",

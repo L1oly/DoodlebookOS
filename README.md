@@ -6,16 +6,26 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a>
-  <a href="https://kde.org"><img src="https://img.shields.io/badge/KDE_Plasma-6.0%2B-blue?logo=kde&logoColor=white" alt="KDE Plasma"></a>
+  <a href="https://kde.org"><img src="https://img.shields.io/badge/KDE_Plasma-6.8.2%2B-blue?logo=kde&logoColor=white" alt="KDE Plasma"></a>
   <a href="https://wayland.freedesktop.org"><img src="https://img.shields.io/badge/Display-Wayland-brightgreen" alt="Wayland"></a>
   <a href="https://ko-fi.com/panoptikuum"><img src="https://img.shields.io/badge/Support_on-Ko--fi-ff5e5b?logo=kofi&logoColor=white" alt="Support on Ko-fi"></a>
 </p>
 
-**DoodlebookOS** is a comprehensive Material 3 Expressive desktop environment suite crafted natively for **KDE Plasma 6 on Wayland**. It recreates the clean, unified Android PC / Googlebook desktop experience featuring custom QML plasmoids, native C++ application styles and window decorations, real-time wallpaper contrast adaptation, dedicated icon personalizers, and a guided graphical setup wizard.
+**DoodlebookOS** is a comprehensive Material 3 Expressive desktop environment suite crafted natively for **KDE Plasma 6 on Wayland**. It recreates the clean, unified Android PC / GooglebookOS desktop experience featuring custom QML plasmoids, native C++ application styles and window decorations, real-time wallpaper contrast adaptation, dedicated icon personalizers, and a guided graphical setup wizard.
 
 <p align="center">
   <img src=".github/assets/screenshot_01_desktop.png" alt="DoodlebookOS Desktop Preview" width="100%">
 </p>
+
+> [!WARNING]
+> **Experimental Early Alpha Release**  
+> DoodlebookOS is currently in active early alpha development and has been developed and tested exclusively on my single reference hardware configuration. Expect bugs, visual glitches, or potential installation failures on different hardware or software configurations. **Do not install this on mission-critical production systems.**
+
+> [!IMPORTANT]
+> **Strongly Recommended: Fresh Installation or Clean User Account**  
+> I strongly advise testing DoodlebookOS on a **freshly installed Linux system** or a **dedicated new user account** (`sudo useradd -m testuser`). Running the installer on an established desktop with existing customizations or conflicting panel setups may lead to unpredictable results or break your existing desktop layout.
+
+---
 
 ### Live Demonstrations & Showcase
 
@@ -33,16 +43,38 @@
 
 ---
 
-## Supported Platforms & System Requirements
+## Display Compatibility: Single Monitor Recommended
 
-To ensure a flawless experience, please review the system prerequisites before running the installer:
+- **Single Display (Tested & Recommended):** DoodlebookOS is architected, tested, and calibrated exclusively for a single monitor.
+- **Multi-Monitor Setups (Untested / Experimental):** Multi-display behavior is currently completely untested and unsupported. Panels and widget positioning may not behave correctly across multiple displays.
+
+---
+
+## System Prerequisites
 
 | Requirement | Specification | Notes |
 | :--- | :--- | :--- |
-| **Desktop Environment** | **KDE Plasma 6.0+** | **Plasma 5 is not supported** (Plasma 6 / Qt6 / KF6 architecture is required). |
-| **Display Server** | **Wayland** | **Wayland session is required**. X11 is not supported due to Wayland layer-shell popups, input region anchoring, and fractional scaling. |
-| **Primary Platform (Tier 1)** | **Fedora 40 / 41+ KDE Spin** | Fully developed, tested, and verified reference environment. |
-| **Compatible Platforms (Tier 2)** | **Arch Linux**, **CachyOS**, **EndeavourOS**, **openSUSE Tumbleweed**, **Ubuntu 24.10+ / KDE Neon** | Supported with automatic dependency resolution. *(Note: Ubuntu 24.04 LTS is not supported as it ships with Plasma 5.27).* |
+| **Reference Platform (Tier 1)** | **Fedora 45 (KDE Plasma Desktop Edition)** | The exact reference environment where DoodlebookOS is developed and verified. |
+| **Desktop Environment** | **KDE Plasma 6.8.2+** | **Plasma 5 is not supported** (Qt6 / KF6 architecture required). |
+| **Display Server** | **Wayland** | **Wayland session is required**. X11 is not supported due to Wayland layer-shell popups and fractional scaling. |
+| **Other Distros (Experimental)** | **Arch Linux**, **openSUSE Tumbleweed**, **Ubuntu 24.10+** | Community testing tier; may require manual dependency resolution. |
+
+---
+
+## 🔰 New to Linux? Start Here
+
+If you do not have Linux installed yet, you can try DoodlebookOS on a clean setup by following these simple steps:
+
+1. **Download Fedora KDE:** Grab the official ISO for [Fedora KDE Desktop Edition](https://fedoraproject.org/spins/kde/).
+2. **Create a Bootable USB:** Flash the downloaded ISO to a USB flash drive using a tool like [Etcher](https://etcher.balena.io/) or Fedora Media Writer.
+3. **Install Fedora:** Boot from the USB drive and complete the guided installation.
+4. **Install DoodlebookOS:** Open the terminal (Konsole) on your fresh Fedora desktop and run:
+   ```bash
+   git clone https://github.com/PanOptikuum/DoodlebookOS.git
+   cd DoodlebookOS
+   chmod +x install-gui.sh
+   ./install-gui.sh
+   ```
 
 ---
 
@@ -71,30 +103,18 @@ You can restore your original desktop configuration at any time by running `./un
 
 ---
 
-## Display Scaling & Multi-Monitor Behavior
-
-### Multi-Monitor Setups
-DoodlebookOS is architected to deliver a streamlined, distraction-free desktop experience:
-- **Primary Display (`screen 0`):** Anchors the unified Top Bar (DateTime & Status Cluster) and the centered bottom Shelf Dock.
-- **Secondary Displays:** Function as clean, uncluttered expanded workspaces displaying your synchronized wallpaper and desktop widgets.
-
-### Automatic Display Scaling
-The installer reads your display EDID and physical metrics via `kscreen-doctor` to calculate optimal Wayland fractional scaling (1.0×, 1.25×, 1.5×, 1.75×, or 2.0×) and enables integer-crisp scaling for legacy XWayland clients.
-
----
-
 ## Key Features
 
-- **Unified Top Bar (`32 dp`):**
+- **Unified Top Bar:**
   - **DateTime (`org.doodlebookos.datetime`):** Top-left pill featuring clean typography and a single-column Material You monthly calendar popup.
   - **StatusCluster (`org.doodlebookos.statuscluster`):** Top-right status pill integrating media controls, notification center (`org.freedesktop.Notifications`), and an Android-style Quick Settings drawer (Wi-Fi, Bluetooth, Dark Mode, Battery Saver, Mic mute, Screenshot, Quick Share).
   - **Adaptive Wallpaper Contrast (`doodlebookos-topbar-color`):** Background daemon that analyzes the wallpaper luminance directly behind top bar pills and dynamically adjusts foreground contrast (dark vs. light text and icons).
-- **Material 3 Shelf Dock (`52 dp`):**
+- **Material 3 Shelf Dock:**
   - **Dock (`org.doodlebookos.dock`):** Centered application shelf with live window indicators, pin management, a full-screen Material You launcher (`Meta`), and a KDE Connect **Phone Hub** integration.
 - **Material 3 Desktop Widgets:**
-  - **Clock:** 12-sided cookie analog clock (`220×220 dp`).
-  - **Weather:** Open-Meteo live weather widget with automatic IP geolocation (`220×220 dp`).
-  - **AppGroup:** Desktop application folder bubbles with live item previews (`90×100 dp`).
+  - **Cookie Analog Clock:** 12-sided cookie clock with curved hands and minute dots.
+  - **Live Weather Widget:** Open-Meteo live weather widget with automatic IP geolocation.
+  - **Desktop Application Folders:** Desktop application folder bubbles (`AppGroup`) with live item previews.
   - **Desktop Containment (`org.kde.desktopcontainment`):** Simplified right-click menu with a live wallpaper carousel.
 - **Native Tools & System Overrides:**
   - **Icon Studio (`doodlebook-icon-studio`):** Dedicated PySide6 / QML tool for personalizing application, PWA, and launcher icons.
@@ -179,7 +199,7 @@ If you enjoy DoodlebookOS and want to support its ongoing development, consider 
 [![Support on Ko-fi](https://img.shields.io/badge/Support_on-Ko--fi-ff5e5b?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/panoptikuum)
 
 - **Discussions & Ideas:** Join the conversation in [GitHub Discussions](https://github.com/PanOptikuum/DoodlebookOS/discussions).
-- **Bug Reports:** Report issues using our [Issue Templates](https://github.com/PanOptikuum/DoodlebookOS/issues).
+- **Bug Reports:** Report issues using the [Issue Templates](https://github.com/PanOptikuum/DoodlebookOS/issues).
 
 ---
 
@@ -203,4 +223,4 @@ If you enjoy DoodlebookOS and want to support its ongoing development, consider 
 
 ## Disclaimer
 
-DoodlebookOS is an independent open-source project and is not affiliated with, sponsored, or endorsed by Google LLC. ChromeOS, Pixel, Android, and Material You / Material Design are trademarks of Google LLC.
+DoodlebookOS is an independent open-source project and is not affiliated with, sponsored, or endorsed by Google LLC. GooglebookOS, Pixel, Android, and Material You / Material Design are trademarks of Google LLC.
