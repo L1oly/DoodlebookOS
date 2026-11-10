@@ -17,24 +17,19 @@
   <img src=".github/assets/screenshot_01_desktop.png" alt="DoodlebookOS Desktop Preview" width="100%">
 </p>
 
-<p align="center">
-  <b>Quick Demos (.mp4):</b>
-  <a href=".github/assets/demo_quicksettings.mp4">Quick Settings Drawer</a> •
-  <a href=".github/assets/demo_launcher.mp4">App Launcher</a> •
-  <a href=".github/assets/demo_calendar.mp4">Calendar</a> •
-  <a href=".github/assets/demo_appgroup.mp4">Desktop Folders</a> •
-  <a href=".github/assets/demo_notifications.mp4">Notifications</a>
-</p>
-
-### Visual Showcase
+### Live Demonstrations & Showcase
 
 | Application Launcher | Quick Settings Drawer |
 | :---: | :---: |
-| <img src=".github/assets/screenshot_02_launcher.png" width="100%" alt="Launcher"> | <img src=".github/assets/screenshot_03_quicksettings.png" width="100%" alt="Quick Settings"> |
+| <img src=".github/assets/demo_launcher.gif" width="100%" alt="Application Launcher Demo"> | <img src=".github/assets/demo_quicksettings.gif" width="100%" alt="Quick Settings Drawer Demo"> |
 
-| Desktop Application Folders | OOBE Setup Wizard |
+| Desktop Application Folders | Single-Column Calendar |
 | :---: | :---: |
-| <img src=".github/assets/screenshot_04_appgroup.png" width="100%" alt="App Folders"> | <img src=".github/assets/screenshot_07_installer_welcome.png" width="100%" alt="Installer"> |
+| <img src=".github/assets/demo_appgroup.gif" width="100%" alt="Desktop Folders Demo"> | <img src=".github/assets/demo_calendar.gif" width="100%" alt="Calendar Demo"> |
+
+| OOBE Setup Wizard (Welcome) | OOBE Setup Wizard (Compiling) |
+| :---: | :---: |
+| <img src=".github/assets/screenshot_07_installer_welcome.png" width="100%" alt="Installer Welcome"> | <img src=".github/assets/screenshot_08_installer_progress.png" width="100%" alt="Installer Progress"> |
 
 ---
 
