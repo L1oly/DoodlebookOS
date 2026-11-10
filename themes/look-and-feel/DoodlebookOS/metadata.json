@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Description": "DoodlebookOS Look and Feel for KDE Plasma 6",
+        "Id": "org.doodlebookos.desktop",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS",
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "Keywords": "Desktop;Workspace;Appearance;Look and Feel;DoodlebookOS;Material You;",
+    "X-Plasma-APIVersion": "2"
+}

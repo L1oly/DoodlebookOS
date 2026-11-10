@@ -1,0 +1,5 @@
+[Misc]
+Name=DoodlebookOS
+Comment=DoodlebookOS widget style
+[KDE]
+WidgetStyle=DoodlebookOS

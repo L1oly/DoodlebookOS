@@ -1,0 +1,6 @@
+File=styleconfig.kcfg
+ClassName=StyleConfigData
+NameSpace=DoodlebookOS
+Singleton=true
+Mutators=true
+GlobalEnums=true

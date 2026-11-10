@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Icon Studio
+GenericName=Icon Customizer
+Comment=Customize and restore application and launcher icons in DoodlebookOS
+Exec=doodlebook-icon-studio
+Icon=preferences-desktop-icons
+Categories=Settings;DesktopSettings;Qt;KDE;
+Terminal=false
+StartupNotify=true

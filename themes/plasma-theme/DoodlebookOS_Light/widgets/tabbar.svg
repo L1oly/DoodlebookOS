@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ns0:svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:ns0="http://www.w3.org/2000/svg" xmlns:ns1="http://www.inkscape.org/namespaces/inkscape" xmlns:ns2="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:ns4="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" width="744.09448819" height="1052.3622047" id="svg2" version="1.1" ns1:version="1.2-dev (942b66973d, 2021-09-28, custom)" ns2:docname="tabbar.svg">
+    <ns2:namedview id="base" pagecolor="#eff0f1" bordercolor="#666666" borderopacity="1.0" ns1:pageopacity="1" ns1:pageshadow="2" ns1:zoom="2.3790753" ns1:cx="263.63345" ns1:cy="693.05746" ns1:document-units="px" ns1:current-layer="layer1" showgrid="true" ns1:snap-global="true" ns1:window-width="1651" ns1:window-height="990" ns1:window-x="25" ns1:window-y="0" ns1:window-maximized="0" ns1:pagecheckerboard="0" ns1:blackoutopacity="0.0">
+        <ns1:grid type="xygrid" id="grid2985" empspacing="5" visible="true" enabled="true" snapvisiblegridlinesonly="true" color="#0000ff" opacity="0.01960784" empcolor="#0000ff" empopacity="0.03921569" />
+    </ns2:namedview>
+    <ns0:defs id="defs4">
+        <ns0:style id="current-color-scheme" type="text/css">
+      .ColorScheme-Text {
+        color:#31363b;
+      }
+      .ColorScheme-Background{
+        color:#eff0f1;
+      }
+      .ColorScheme-ViewText {
+        color:#31363b;
+      }
+      .ColorScheme-ViewBackground{
+        color:#fcfcfc;
+      }
+      .ColorScheme-ViewHover {
+        color:#3daee9;
+      }
+      .ColorScheme-ViewFocus{
+        color:#3daee9;
+      }
+      .ColorScheme-ButtonText {
+        color:#31363b;
+      }
+      .ColorScheme-ButtonBackground{
+        color:#eff0f1;
+      }
+      .ColorScheme-ButtonHover {
+        color:#3daee9;
+      }
+      .ColorScheme-ButtonFocus{
+        color:#3daee9;
+      }
+</ns0:style>
+    </ns0:defs>
+    <ns0:metadata id="metadata7">
+        <rdf:RDF>
+            <ns4:Work rdf:about="">
+                <dc:format>image/svg+xml</dc:format>
+                <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+                <dc:title />
+            </ns4:Work>
+        </rdf:RDF>
+    </ns0:metadata>
+    <ns0:g ns1:label="Layer 1" ns1:groupmode="layer" id="layer1">
+        <ns0:rect y="467.12659" x="-233.82362" height="41.12067" width="41.362885" id="hint-tile-center" style="opacity:0.875;fill:#008000;fill-opacity:1;stroke:none" />
+        <ns0:g id="south-active-tab-top" ns1:label="#g3826" transform="translate(236.00001,71.99998)">
+            <ns0:rect class="ColorScheme-ButtonFocus" y="359.36218" x="40" height="3" width="80" id="rect3003" style="fill:none;fill-opacity:0;opacity:0;stroke:none" />
+        </ns0:g>
+        <ns0:g id="south-active-tab-topleft" ns1:label="#g3834" transform="translate(236.00001,71.99998)">
+            <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="rect3073-5" width="10" height="3" x="30" y="359.36218" />
+            <ns0:rect style="fill:none;fill-opacity:0;opacity:0;stroke:none" id="rect3542" width="7" height="2.9999752" x="32.999989" y="359.36221" class="ColorScheme-ButtonFocus" />
+        </ns0:g>
+        <ns0:g id="south-active-tab-topright" ns1:label="#g3830" transform="translate(236.00001,71.99998)">
+            <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="rect3073-45" width="10" height="3" x="120" y="359.36218" />
+            <ns0:rect style="fill:none;fill-opacity:0;opacity:0;stroke:none" id="rect3542-9" width="7" height="2.9999752" x="119.99999" y="359.36221" class="ColorScheme-ButtonFocus" />
+        </ns0:g>
+        <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="south-active-tab-left" width="10" height="12" x="266" y="434.36215" ns1:label="#rect3814" />
+        <ns0:rect y="434.36215" x="276" height="12" width="80" id="south-active-tab-center" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" ns1:label="#rect3816" />
+        <ns0:rect y="434.36215" x="356" height="12" width="10" id="south-active-tab-right" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" ns1:label="#rect3818" />
+        <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="south-active-tab-bottomright" width="10" height="4" x="356" y="446.36215" ns1:label="#rect3820" />
+        <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="south-active-tab-bottom" width="80" height="4" x="276" y="446.36215" ns1:label="#rect3822" />
+        <ns0:rect y="446.36215" x="266" height="4" width="10" id="south-active-tab-bottomleft" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" ns1:label="#rect3824" />
+        <ns0:rect y="437.36215" x="266" height="5" width="6" id="south-active-tab-hint-left-margin" style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" />
+        <ns0:rect style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" id="south-active-tab-hint-right-margin" width="6" height="5" x="360" y="437.36215" />
+        <ns0:rect y="431.3621521" x="320.241241455" height="10" width="5" id="south-active-tab-hint-top-margin" style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1" />
+        <ns0:rect style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1" id="south-active-tab-hint-bottom-margin" width="5" height="10" x="320.241241455" y="446.3621521" />
+        <ns0:rect ns1:label="#rect3814" y="408.41531" x="-366.06082" height="12" width="10" id="east-active-tab-bottom" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3816" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="east-active-tab-center" width="80" height="12" x="-356.06082" y="408.41531" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3818" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="east-active-tab-top" width="10" height="12" x="-276.06082" y="408.41531" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3820" y="420.41531" x="-276.06082" height="4" width="10" id="east-active-tab-topright" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3822" y="420.41531" x="-356.06082" height="4" width="80" id="east-active-tab-right" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3824" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="east-active-tab-bottomright" width="10" height="4" x="-366.06082" y="420.41531" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:rect style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" id="east-active-tab-hint-bottom-margin" width="6" height="5" x="-366.06082" y="411.41531" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:rect y="411.41531" x="-272.06082" height="5" width="6" id="east-active-tab-hint-top-margin" style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:g id="east-active-tab-left" ns1:label="#g3826" transform="matrix(0,1,-1,0,766.77719,236.36218)">
+            <ns0:rect class="ColorScheme-ButtonFocus" y="359.36218" x="40" height="3" width="80" id="rect3003-5-6" style="fill:none;fill-opacity:0;opacity:0;stroke:none" />
+        </ns0:g>
+        <ns0:rect style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" id="east-active-tab-hint-left-margin" width="5" height="8" x="-311.81958" y="404.41531" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:rect y="420.41531" x="-311.81958" height="4" width="5" id="east-active-tab-hint-right-margin" style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" transform="matrix(0,-1,1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3814" y="-216.00003" x="266.36218" height="12" width="10" id="west-active-tab-top" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3816" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="west-active-tab-center" width="80" height="12" x="276.36218" y="-216.00003" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3818" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="west-active-tab-bottom" width="10" height="12" x="356.36218" y="-216.00003" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3820" y="-204.00003" x="356.36218" height="4" width="10" id="west-active-tab-bottomleft" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3822" y="-204.00003" x="276.36218" height="4" width="80" id="west-active-tab-left" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:rect ns1:label="#rect3824" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="west-active-tab-topleft" width="10" height="4" x="266.36218" y="-204.00003" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:rect style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" id="west-active-tab-hint-top-margin" width="6" height="5" x="266.36218" y="-213.00003" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:rect y="-213.00003" x="360.36218" height="5" width="6" id="west-active-tab-hint-bottom-margin" style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:g id="west-active-tab-right" ns1:label="#g3826" transform="matrix(0,1,-1,0,579.36219,236.36218)">
+            <ns0:rect class="ColorScheme-ButtonFocus" y="359.36218" x="40" height="3" width="80" id="rect3003-5" style="fill:none;fill-opacity:0;opacity:0;stroke:none" />
+        </ns0:g>
+        <ns0:g id="west-active-tab-topright" ns1:label="#g3834" transform="matrix(0,1,-1,0,579.36219,236.36218)">
+            <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="rect3073-5-5" width="10" height="3" x="30" y="359.36218" />
+            <ns0:rect style="fill:none;fill-opacity:0;opacity:0;stroke:none" id="rect3542-0" width="7" height="2.9999752" x="32.999989" y="359.36221" class="ColorScheme-ButtonFocus" />
+        </ns0:g>
+        <ns0:g id="west-active-tab-bottomright" ns1:label="#g3830" transform="matrix(0,1,-1,0,579.36219,236.36218)">
+            <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="rect3073-45-07" width="10" height="3" x="120" y="359.36218" />
+            <ns0:rect style="fill:none;fill-opacity:0;opacity:0;stroke:none" id="rect3542-9-4" width="7" height="2.9999752" x="119.99999" y="359.36221" class="ColorScheme-ButtonFocus" />
+        </ns0:g>
+        <ns0:rect style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" id="west-active-tab-hint-right-margin" width="5" height="8" x="320.60342" y="-220.00003" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:rect y="-204.00003" x="320.60342" height="4" width="5" id="west-active-tab-hint-left-margin" style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" transform="matrix(0,1,-1,0,0,0)" />
+        <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="north-active-tab-right" width="10" height="12" x="-373" y="-226.36218" ns1:label="#rect3814" transform="scale(-1,-1)" />
+        <ns0:rect y="-234.362182617" x="-363" height="20" width="80" id="north-active-tab-center" style="opacity:0.01;fill:#e4e6e8;fill-opacity:1;stroke:none;stroke-width:1" ns1:label="#rect3816" transform="scale(-1)" />
+        <ns0:rect y="-226.36218" x="-283" height="12" width="10" id="north-active-tab-left" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" ns1:label="#rect3818" transform="scale(-1,-1)" />
+        <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="north-active-tab-topleft" width="10" height="4" x="-283" y="-214.36218" ns1:label="#rect3820" transform="scale(-1,-1)" />
+        <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="north-active-tab-top" width="80" height="4" x="-363" y="-214.36218" ns1:label="#rect3822" transform="scale(-1,-1)" />
+        <ns0:rect y="-214.36218" x="-373" height="4" width="10" id="north-active-tab-topright" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" ns1:label="#rect3824" transform="scale(-1,-1)" />
+        <ns0:rect y="-223.36218" x="-373" height="5" width="6" id="north-active-tab-hint-right-margin" style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" transform="scale(-1,-1)" />
+        <ns0:rect style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none" id="north-active-tab-hint-left-margin" width="6" height="5" x="-279" y="-223.36218" transform="scale(-1,-1)" />
+        <ns0:g id="north-active-tab-bottom" ns1:label="#g3826" transform="translate(243,-132.00001)">
+            <ns0:rect class="ColorScheme-ButtonFocus" y="359.36218" x="40" height="3" width="80" id="rect3003-6" style="fill:none;fill-opacity:0;opacity:0;stroke:none" />
+        </ns0:g>
+        <ns0:rect y="-230.362182617" x="-318.758758545" height="10" width="5" id="north-active-tab-hint-bottom-margin" style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1" transform="scale(-1)" />
+        <ns0:rect style="fill:#4e9a06;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1" id="north-active-tab-hint-top-margin" width="5" height="10" x="-318.758758545" y="-220.362182617" transform="scale(-1)" />
+        <ns0:g id="north-active-tab-bottomleft" ns1:label="#g3834" transform="translate(243,-132.00001)">
+            <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="rect3073-5-7" width="10" height="3" x="30" y="359.36218" />
+            <ns0:rect style="fill:none;fill-opacity:0;opacity:0;stroke:none" id="rect3542-3" width="7" height="2.9999752" x="32.999989" y="359.36221" class="ColorScheme-ButtonFocus" />
+        </ns0:g>
+        <ns0:g id="north-active-tab-bottomright" ns1:label="#g3378">
+            <ns0:rect y="227.36218" x="363" height="3" width="10" id="rect3073-45-6" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" />
+            <ns0:rect y="227.36218" x="363" height="3" width="10" id="rect3073-45-0" style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" />
+            <ns0:rect class="ColorScheme-ButtonFocus" y="227.36221" x="363" height="2.9999752" width="7" id="rect3542-9-8" style="fill:none;fill-opacity:0;opacity:0;stroke:none" />
+        </ns0:g>
+        <ns0:g id="east-active-tab-topleft" ns1:label="#g3834" transform="matrix(0,1,-1,0,766.77719,236.36218)">
+            <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="rect3073-5-5-1" width="10" height="3" x="30" y="359.36218" />
+            <ns0:rect style="fill:none;fill-opacity:0;opacity:0;stroke:none" id="rect3542-0-7" width="7" height="2.9999752" x="32.999989" y="359.36221" class="ColorScheme-ButtonFocus" />
+        </ns0:g>
+        <ns0:g id="east-active-tab-bottomleft" ns1:label="#g3830" transform="matrix(0,1,-1,0,766.77719,236.36218)">
+            <ns0:rect style="opacity:0.01000001;fill:#e4e6e8;fill-opacity:1;stroke:none" id="rect3073-45-07-7" width="10" height="3" x="120" y="359.36218" />
+            <ns0:rect style="fill:none;fill-opacity:0;opacity:0;stroke:none" id="rect3542-9-4-6" width="7" height="2.9999752" x="119.99999" y="359.36221" class="ColorScheme-ButtonFocus" />
+        </ns0:g>
+    </ns0:g>
+</ns0:svg>

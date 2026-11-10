@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Maciej Kujawiński <maciek.kujawinski@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+# ==============================================================================
+# DoodlebookOS Theme Switcher (Dark / Light / Toggle)
+# ==============================================================================
+set -e
+
+MODE="${1:-}"
+
+# Auto-detect current theme if toggle or no argument
+if [[ "$MODE" == "toggle" || -z "$MODE" ]]; then
+    CURRENT=$(kreadconfig6 --file kdeglobals --group General --key ColorScheme 2>/dev/null || echo "")
+    if [[ "$CURRENT" == *"LIGHT"* || "$CURRENT" == *"Light"* ]]; then
+        MODE="dark"
+    else
+        MODE="light"
+    fi
+elif [[ "$MODE" == "status" ]]; then
+    CURRENT=$(kreadconfig6 --file kdeglobals --group General --key ColorScheme 2>/dev/null || echo "")
+    if [[ "$CURRENT" == *"LIGHT"* || "$CURRENT" == *"Light"* ]]; then
+        echo "light"
+    else
+        echo "dark"
+    fi
+    exit 0
+fi
+
+WP_DIR="$HOME/.local/share/wallpapers/DoodlebookOS"
+
+find_wp() {
+    local prefix="$1"
+    for ext in jpeg jpg png webp; do
+        if [[ -f "$WP_DIR/${prefix}.${ext}" ]]; then
+            echo "$WP_DIR/${prefix}.${ext}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+if [[ "$MODE" == "dark" || "$MODE" == "Dark" ]]; then
+    echo "[i] Switching to DoodlebookOS Dark..."
+    if command -v plasma-apply-colorscheme &>/dev/null; then
+        plasma-apply-colorscheme DoodlebookOS_DARK
+    fi
+    if command -v plasma-apply-desktoptheme &>/dev/null; then
+        plasma-apply-desktoptheme DoodlebookOS_Dark
+    fi
+    if command -v kwriteconfig6 &>/dev/null; then
+        kwriteconfig6 --file plasmarc --group Theme --key name "DoodlebookOS_Dark"
+        kwriteconfig6 --file kdeglobals --group General --key ColorScheme "DoodlebookOS_DARK"
+    fi
+    WP_DARK=$(find_wp "DoodlebookOS_Wallpaper_DARK")
+    if [[ -n "$WP_DARK" ]] && command -v plasma-apply-wallpaperimage &>/dev/null; then
+        plasma-apply-wallpaperimage "$WP_DARK" 2>/dev/null || true
+    fi
+elif [[ "$MODE" == "light" || "$MODE" == "Light" ]]; then
+    echo "[i] Switching to DoodlebookOS Light..."
+    if command -v plasma-apply-colorscheme &>/dev/null; then
+        plasma-apply-colorscheme DoodlebookOS_LIGHT
+    fi
+    if command -v plasma-apply-desktoptheme &>/dev/null; then
+        plasma-apply-desktoptheme DoodlebookOS_Light
+    fi
+    if command -v kwriteconfig6 &>/dev/null; then
+        kwriteconfig6 --file plasmarc --group Theme --key name "DoodlebookOS_Light"
+        kwriteconfig6 --file kdeglobals --group General --key ColorScheme "DoodlebookOS_LIGHT"
+    fi
+    WP_LIGHT=$(find_wp "DoodlebookOS_Wallpaper_LIGHT")
+    if [[ -n "$WP_LIGHT" ]] && command -v plasma-apply-wallpaperimage &>/dev/null; then
+        plasma-apply-wallpaperimage "$WP_LIGHT" 2>/dev/null || true
+    fi
+else
+    echo "Usage: $(basename "$0") [dark|light|toggle|status]"
+    exit 1
+fi
+
+if [[ -x "$HOME/.local/bin/doodlebookos-topbar-color" ]]; then
+    "$HOME/.local/bin/doodlebookos-topbar-color" 2>/dev/null || true
+fi
+
+if command -v systemctl &>/dev/null; then
+    systemctl --user restart plasma-plasmashell.service 2>/dev/null || true
+fi
+echo "[✓] DoodlebookOS theme switched to $MODE successfully."

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SPDX-FileCopyrightText: 2024-2026 Maciej Kujawiński <maciek.kujawinski@gmail.com>
+    SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <entry name="launcherIcon" type="String">
+      <label>Path to custom launcher icon.</label>
+      <default></default>
+    </entry>
+    <entry name="appsRefreshTrigger" type="Int">
+      <label>Timestamp trigger to refresh launcher apps model.</label>
+      <default>0</default>
+    </entry>
+    <entry name="launchers" type="StringList">
+      <label>List of pinned launcher apps.</label>
+      <default>preferred://browser,preferred://filemanager,applications:org.kde.konsole.desktop,applications:org.kde.discover.desktop,applications:systemsettings.desktop</default>
+    </entry>
+    <entry name="popupWidth" type="Int">
+      <label>Width of the launcher dialog popup.</label>
+      <default>680</default>
+    </entry>
+    <entry name="numberColumns" type="Int">
+      <label>Number of columns in the launcher app grid.</label>
+      <default>6</default>
+    </entry>
+    <entry name="showTooltips" type="Bool">
+      <label>Whether to display window tooltips on hover.</label>
+      <default>true</default>
+    </entry>
+    <entry name="usePlasmaTheme" type="Bool">
+      <label>Use native Plasma style and background</label>
+      <default>true</default>
+    </entry>
+    <entry name="useSystemFontSettings" type="Bool">
+      <label>Uses system font settings</label>
+      <default>true</default>
+    </entry>
+    <entry name="fontFamily" type="String">
+      <label>Font family</label>
+      <default>Google Sans</default>
+    </entry>
+    <entry name="fontSize" type="Int">
+      <label>Font size in points</label>
+      <default>10</default>
+    </entry>
+    <entry name="dimBackground" type="Bool">
+      <label>Dim desktop background when launcher is open</label>
+      <default>true</default>
+    </entry>
+    <entry name="hiddenApps" type="StringList">
+      <label>List of hidden app IDs in launcher.</label>
+      <default></default>
+    </entry>
+    <entry name="favoriteApps" type="StringList">
+      <label>List of favorite apps in launcher.</label>
+      <default></default>
+    </entry>
+    <entry name="favoriteSystemActions" type="StringList">
+      <label>List of favorite system actions in launcher.</label>
+      <default></default>
+    </entry>
+    <entry name="recentOrdering" type="Int">
+      <label>Recent ordering mode.</label>
+      <default>0</default>
+    </entry>
+    <entry name="favoritesPortedToKAstats" type="Bool">
+      <label>Whether favorites were migrated.</label>
+      <default>false</default>
+    </entry>
+  </group>
+</kcfg>

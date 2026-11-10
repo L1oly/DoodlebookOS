@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Category": "Astronomy",
+        "Description": "DoodlebookOS Material You weather widget with hourly and daily forecast",
+        "Icon": "weather-clouds",
+        "Id": "org.doodlebookos.weather",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS Weather",
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

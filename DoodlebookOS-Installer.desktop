@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=DoodlebookOS Installer
+Comment=Graphical OOBE setup wizard for DoodlebookOS on KDE Plasma 6
+Exec=sh -c 'cd "$(dirname "%k")" && ./install-gui.sh'
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=Settings;DesktopSettings;Qt;KDE;

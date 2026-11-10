@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0.5 5.0 23.0 13.5"
+   height="13.5"
+   width="23.0"
+   fill="#e3e3e3"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="battery_android_bolt.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="22.627417"
+     inkscape:cx="8.9935144"
+     inkscape:cy="10.275145"
+     inkscape:window-width="1562"
+     inkscape:window-height="1020"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1" />
+  <path
+     d="M4,18q-1.25,0-2.13-0.88T1,15V9Q1,7.75 1.88,6.88T4,6H15.98q0.5,0 0.75,0.31T16.98,7T16.73,7.69T15.98,8H4Q3.58,8 3.29,8.29T3,9v6q0,0.42 0.29,0.71T4,16H14.63q0.5,0 0.75,0.31T15.63,17t-0.25,0.69T14.63,18H4ZM3,16q0,0 0-0.29T3,15V9Q3,8.57 3,8.29T3,8v5.38q0,0.5 0,1.06T3,15v1Zm15.38-3H16.05q-0.32,0-0.46-0.28t0.06-0.53l4.2-5.27q0.13-0.15 0.31-0.08q0.19,0.08 0.14,0.28L19.63,11h2.33q0.32,0 0.46,0.27T22.35,11.8l-4.2,5.28q-0.13,0.15-0.31,0.07q-0.19-0.07-0.14-0.27L18.38,13Z"
+     id="path1" />
+  <path
+     style="fill:#e3e3e3;fill-opacity:1;stroke:none;stroke-width:0.00917801"
+     d="M 2.9047948,12 V 8 H 8.7673978 14.63 v 4 4 H 8.7673978 2.9047948 Z"
+     id="path2" />
+</svg>

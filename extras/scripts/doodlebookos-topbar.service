@@ -1,0 +1,13 @@
+[Unit]
+Description=DoodlebookOS Top Bar Color & Luminance Adapter Daemon
+After=plasma-plasmashell.service graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/doodlebookos-topbar-color --daemon
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target

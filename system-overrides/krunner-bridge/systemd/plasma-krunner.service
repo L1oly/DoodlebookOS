@@ -1,0 +1,12 @@
+[Unit]
+Description=DoodlebookOS KRunner Bridge (Launcher Replacement)
+PartOf=graphical-session.target
+After=plasma-core.target
+
+[Service]
+ExecStart=%h/.local/bin/doodlebook-krunner-bridge.py
+Restart=always
+RestartSec=1s
+
+[Install]
+WantedBy=plasma-core.target

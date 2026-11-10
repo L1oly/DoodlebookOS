@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
+  <kcfgfile name=""/>
+
+  <group name="General">
+    <entry name="contentColor" type="String">
+      <label>Top bar icons and text content color</label>
+      <default></default>
+    </entry>
+    <entry name="useCustomAccentColor" type="Bool">
+      <label>Use custom accent color</label>
+      <default>false</default>
+    </entry>
+    <entry name="accentColor" type="String">
+      <label>Accent color for active tiles and sliders</label>
+      <default>#bec2ef</default>
+    </entry>
+    <entry name="activeTiles" type="String">
+      <label>List of active Quick Settings tiles</label>
+      <default>wifi,bluetooth,dark_mode,battery_saver,modes,mic,screenshot,quickshare</default>
+    </entry>
+  </group>
+</kcfg>

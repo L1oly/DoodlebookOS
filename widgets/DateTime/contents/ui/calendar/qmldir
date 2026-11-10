@@ -1,0 +1,6 @@
+module calendar
+DayDelegate 1.0 DayDelegate.qml
+DaysCalendar 1.0 DaysCalendar.qml
+InfiniteList 1.0 InfiniteList.qml
+MonthViewHeader 1.0 MonthViewHeader.qml
+MonthView 1.0 MonthView.qml

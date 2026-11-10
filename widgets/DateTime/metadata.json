@@ -1,0 +1,27 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "KDE Plasma Developers"
+            },
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Category": "Date and Time",
+        "Description": "Panel date and time indicator with calendar popup",
+        "Icon": "preferences-system-time",
+        "Id": "org.doodlebookos.datetime",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS Date & Time",
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": [
+        "org.kde.plasma.time",
+        "org.kde.plasma.date"
+    ]
+}

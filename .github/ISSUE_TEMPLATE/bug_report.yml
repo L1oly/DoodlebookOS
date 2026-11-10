@@ -1,0 +1,54 @@
+name: Bug Report
+description: File a bug report to help improve DoodlebookOS
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please ensure you have verified the requirements (KDE Plasma 6.0+ on Wayland) before submitting.
+  - type: dropdown
+    id: distribution
+    attributes:
+      label: Linux Distribution
+      description: What Linux distribution are you running?
+      options:
+        - Fedora 40 / 41+ KDE Spin
+        - Arch Linux / CachyOS / EndeavourOS
+        - openSUSE Tumbleweed
+        - Ubuntu 24.10+ / KDE Neon
+        - Other (please specify below)
+    validations:
+      required: true
+  - type: input
+    id: plasma_version
+    attributes:
+      label: KDE Plasma & Qt Version
+      description: Run `plasmashell --version` and `qmake6 --version` in terminal.
+      placeholder: e.g., Plasma 6.2.2, Qt 6.8.0, Wayland
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How do we reproduce the issue?
+      placeholder: |
+        1. Run `./install-gui.sh`
+        2. Click on 'Install'
+        3. See error in logs...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Log Output
+      description: Please paste logs from `journalctl --user -u plasma-plasmashell.service -n 50 --no-pager` or installer logs.
+      render: shell

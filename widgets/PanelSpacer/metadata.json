@@ -1,0 +1,23 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "KDE Plasma Developers"
+            },
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Category": "Windows and Tasks",
+        "Description": "Panel spacer with DoodlebookOS taskbar context menu",
+        "Icon": "distribute-horizontal-margin",
+        "Id": "org.doodlebookos.panelspacer",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS Panel Spacer",
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

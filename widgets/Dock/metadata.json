@@ -1,0 +1,31 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "friedrich.schriewer@gmx.net",
+                "Name": "Friedrich Schriewer"
+            },
+            {
+                "Name": "KDE Plasma Developers"
+            },
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Category": "Windows and Tasks",
+        "Description": "ChromeOS-style shelf dock with launcher and Phone Hub",
+        "Icon": "preferences-system-windows",
+        "Id": "org.doodlebookos.dock",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS Dock",
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": [
+        "org.kde.plasma.multitasking",
+        "org.kde.plasma.launchermenu"
+    ]
+}

@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Category": "Date and Time",
+        "Description": "Analog clock with dynamic Material You accent colors",
+        "Icon": "preferences-system-time",
+        "Id": "org.doodlebookos.clock",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS Clock",
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

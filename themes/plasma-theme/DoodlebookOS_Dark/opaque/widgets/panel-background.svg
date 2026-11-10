@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="84" height="184" version="1.1">
+  <defs id="defs-plasma-frame">
+    <style type="text/css" id="current-color-scheme">
+      .ColorScheme-Text { color: #eff0f1; }
+      .ColorScheme-Background { color: #232629; }
+      .ColorScheme-Highlight { color: #3daee9; }
+    </style>
+  </defs>
+
+  <!-- ========================================== -->
+  <!-- SEKCJA 1: WIDOCZNA RAMKA PANELU (0..84, 0..84) - PROSTOKĄTNA (100% KRYCIA) -->
+  <!-- ========================================== -->
+
+  <g id="topleft">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="0" y="0" width="2" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="0" y="0" width="2" height="2" />
+  </g>
+
+  <g id="top">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="2" y="0" width="80" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="2" y="0" width="80" height="2" />
+  </g>
+
+  <g id="topright">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="82" y="0" width="2" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="82" y="0" width="2" height="2" />
+  </g>
+
+  <g id="left">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="0" y="2" width="2" height="80" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="0" y="2" width="2" height="80" />
+  </g>
+
+  <g id="center">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="2" y="2" width="80" height="80" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="2" y="2" width="80" height="80" />
+  </g>
+
+  <g id="right">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="82" y="2" width="2" height="80" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="82" y="2" width="2" height="80" />
+  </g>
+
+  <g id="bottomleft">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="0" y="82" width="2" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="0" y="82" width="2" height="2" />
+  </g>
+
+  <g id="bottom">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="2" y="82" width="80" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="2" y="82" width="80" height="2" />
+  </g>
+
+  <g id="bottomright">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="82" y="82" width="2" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="82" y="82" width="2" height="2" />
+  </g>
+
+  <!-- Marginesy wewnętrzne -->
+  <rect id="hint-top-margin" x="32" y="0" width="8" height="0" fill="none" opacity="0.001" />
+  <rect id="hint-bottom-margin" x="32" y="80" width="8" height="0" fill="none" opacity="0.001" />
+  <rect id="hint-left-margin" x="0" y="32" width="0.01" height="8" fill="none" opacity="0.001" />
+  <rect id="hint-right-margin" x="83.99" y="32" width="0.01" height="8" fill="none" opacity="0.001" />
+
+  <!-- ========================================== -->
+  <!-- SEKCJA 2: MASKA KWIN (PROSTOKĄTNA) -->
+  <!-- ========================================== -->
+
+  <rect id="mask-topleft" fill="#000000" x="0" y="100" width="2" height="2" />
+  <rect id="mask-top" fill="#000000" x="2" y="100" width="80" height="2" />
+  <rect id="mask-topright" fill="#000000" x="82" y="100" width="2" height="2" />
+  <rect id="mask-left" fill="#000000" x="0" y="102" width="2" height="80" />
+  <rect id="mask-center" fill="#000000" x="2" y="102" width="80" height="80" />
+  <rect id="mask-right" fill="#000000" x="82" y="102" width="2" height="80" />
+  <rect id="mask-bottomleft" fill="#000000" x="0" y="182" width="2" height="2" />
+  <rect id="mask-bottom" fill="#000000" x="2" y="182" width="80" height="2" />
+  <rect id="mask-bottomright" fill="#000000" x="82" y="182" width="2" height="2" />
+
+  <!-- ========================================== -->
+  <!-- SEKCJA NORTH: GÓRNY PASEK (100% PRZEZROCZYSTY) -->
+  <!-- ========================================== -->
+
+  <rect id="north-topleft" x="0" y="0" width="0" height="0" fill="none" opacity="0.001" />
+  <rect id="north-top" x="0" y="0" width="84" height="0" fill="none" opacity="0.001" />
+  <rect id="north-topright" x="84" y="0" width="0" height="0" fill="none" opacity="0.001" />
+  <rect id="north-left" x="0" y="0" width="0" height="84" fill="none" opacity="0.001" />
+  <rect id="north-center" x="0" y="0" width="84" height="84" fill="none" opacity="0.001" />
+  <rect id="north-right" x="84" y="0" width="0" height="84" fill="none" opacity="0.001" />
+  <rect id="north-bottomleft" x="0" y="84" width="0" height="0" fill="none" opacity="0.001" />
+  <rect id="north-bottom" x="0" y="84" width="84" height="0" fill="none" opacity="0.001" />
+  <rect id="north-bottomright" x="84" y="84" width="0" height="0" fill="none" opacity="0.001" />
+
+  <!-- Marginesy wewnętrzne dla górnego paska -->
+  <rect id="north-hint-top-margin" x="32" y="0" width="8" height="0.01" fill="none" opacity="0.001" />
+  <rect id="north-hint-bottom-margin" x="32" y="84" width="8" height="0.01" fill="none" opacity="0.001" />
+  <rect id="north-hint-left-margin" x="0" y="32" width="0.01" height="8" fill="none" opacity="0.001" />
+  <rect id="north-hint-right-margin" x="83.99" y="32" width="0.01" height="8" fill="none" opacity="0.001" />
+
+  <!-- Maski KWin dla górnego paska (przezroczyste = brak rozmycia tła) -->
+  <rect id="north-mask-topleft" fill="none" opacity="0.001" x="0" y="100" width="2" height="2" />
+  <rect id="north-mask-top" fill="none" opacity="0.001" x="2" y="100" width="80" height="2" />
+  <rect id="north-mask-topright" fill="none" opacity="0.001" x="82" y="100" width="2" height="2" />
+  <rect id="north-mask-left" fill="none" opacity="0.001" x="0" y="102" width="2" height="80" />
+  <rect id="north-mask-center" fill="none" opacity="0.001" x="2" y="102" width="80" height="80" />
+  <rect id="north-mask-right" fill="none" opacity="0.001" x="82" y="102" width="2" height="80" />
+  <rect id="north-mask-bottomleft" fill="none" opacity="0.001" x="0" y="182" width="2" height="2" />
+  <rect id="north-mask-bottom" fill="none" opacity="0.001" x="2" y="182" width="80" height="2" />
+  <rect id="north-mask-bottomright" fill="none" opacity="0.001" x="82" y="182" width="2" height="2" />
+
+  <!-- Maski KSvg dla górnego paska (KSvg FrameSvg szuka 'mask-' + prefix + 'center') -->
+  <!-- 1px na samym dole w narożnikach zapobiega fallbackowi KWin na pełne rozmycie ekranu, dając zero bluru i 100% klikalność -->
+  <rect id="mask-north-topleft" fill="none" opacity="0.001" x="0" y="100" width="2" height="2" />
+  <rect id="mask-north-top" fill="none" opacity="0.001" x="2" y="100" width="80" height="2" />
+  <rect id="mask-north-topright" fill="none" opacity="0.001" x="82" y="100" width="2" height="2" />
+  <rect id="mask-north-left" fill="none" opacity="0.001" x="0" y="102" width="2" height="80" />
+  <rect id="mask-north-center" fill="none" opacity="0.001" x="2" y="102" width="80" height="80" />
+  <rect id="mask-north-right" fill="none" opacity="0.001" x="82" y="102" width="2" height="80" />
+  <g id="mask-north-bottomleft">
+    <rect x="0" y="182" width="2" height="2" fill="none" opacity="0.001" />
+    <rect x="0" y="183" width="1" height="1" fill="#000000" opacity="0.01" />
+  </g>
+  <rect id="mask-north-bottom" fill="none" opacity="0.001" x="2" y="182" width="80" height="2" />
+  <g id="mask-north-bottomright">
+    <rect x="82" y="182" width="2" height="2" fill="none" opacity="0.001" />
+    <rect x="83" y="183" width="1" height="1" fill="#000000" opacity="0.01" />
+  </g>
+
+  <!-- ========================================== -->
+  <!-- SEKCJA SOUTH: DOLNY DOCK/PASEK (100% KRYCIA, BRAK CIENI) -->
+  <!-- ========================================== -->
+
+  <g id="south-topleft">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="0" y="0" width="2" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="0" y="0" width="2" height="2" />
+  </g>
+  <g id="south-top">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="2" y="0" width="80" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="2" y="0" width="80" height="2" />
+  </g>
+  <g id="south-topright">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="82" y="0" width="2" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="82" y="0" width="2" height="2" />
+  </g>
+  <g id="south-left">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="0" y="2" width="2" height="80" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="0" y="2" width="2" height="80" />
+  </g>
+  <g id="south-center">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="2" y="2" width="80" height="80" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="2" y="2" width="80" height="80" />
+  </g>
+  <g id="south-right">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="82" y="2" width="2" height="80" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="82" y="2" width="2" height="80" />
+  </g>
+  <g id="south-bottomleft">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="0" y="82" width="2" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="0" y="82" width="2" height="2" />
+  </g>
+  <g id="south-bottom">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="2" y="82" width="80" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="2" y="82" width="80" height="2" />
+  </g>
+  <g id="south-bottomright">
+    <rect class="ColorScheme-Background" style="fill:currentColor; fill-opacity:1.0;"
+        x="82" y="82" width="2" height="2" />
+    <rect style="fill:#000000; fill-opacity:0.58;" x="82" y="82" width="2" height="2" />
+  </g>
+
+  <rect id="south-hint-top-margin" x="32" y="0" width="8" height="0" fill="none" opacity="0.001" />
+  <rect id="south-hint-bottom-margin" x="32" y="80" width="8" height="0" fill="none" opacity="0.001" />
+  <rect id="south-hint-left-margin" x="0" y="32" width="4" height="8" fill="none" opacity="0.001" />
+  <rect id="south-hint-right-margin" x="80" y="32" width="4" height="8" fill="none" opacity="0.001" />
+
+  <!-- Maski KWin dla dolnego paska (south-mask-* oraz mask-south-*) -->
+  <rect id="south-mask-topleft" fill="#000000" x="0" y="100" width="2" height="2" />
+  <rect id="south-mask-top" fill="#000000" x="2" y="100" width="80" height="2" />
+  <rect id="south-mask-topright" fill="#000000" x="82" y="100" width="2" height="2" />
+  <rect id="south-mask-left" fill="#000000" x="0" y="102" width="2" height="80" />
+  <rect id="south-mask-center" fill="#000000" x="2" y="102" width="80" height="80" />
+  <rect id="south-mask-right" fill="#000000" x="82" y="102" width="2" height="80" />
+  <rect id="south-mask-bottomleft" fill="#000000" x="0" y="182" width="2" height="2" />
+  <rect id="south-mask-bottom" fill="#000000" x="2" y="182" width="80" height="2" />
+  <rect id="south-mask-bottomright" fill="#000000" x="82" y="182" width="2" height="2" />
+
+  <rect id="mask-south-topleft" fill="#000000" x="0" y="100" width="2" height="2" />
+  <rect id="mask-south-top" fill="#000000" x="2" y="100" width="80" height="2" />
+  <rect id="mask-south-topright" fill="#000000" x="82" y="100" width="2" height="2" />
+  <rect id="mask-south-left" fill="#000000" x="0" y="102" width="2" height="80" />
+  <rect id="mask-south-center" fill="#000000" x="2" y="102" width="80" height="80" />
+  <rect id="mask-south-right" fill="#000000" x="82" y="102" width="2" height="80" />
+  <rect id="mask-south-bottomleft" fill="#000000" x="0" y="182" width="2" height="2" />
+  <rect id="mask-south-bottom" fill="#000000" x="2" y="182" width="80" height="2" />
+  <rect id="mask-south-bottomright" fill="#000000" x="82" y="182" width="2" height="2" />
+</svg>

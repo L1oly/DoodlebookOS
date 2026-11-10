@@ -1,0 +1,224 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Maciej Kujawiński <maciek.kujawinski@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""
+DoodlebookOS Top Bar Color Adapter
+Analyzes desktop wallpaper brightness under top bar widgets
+(DateTime on left, StatusCluster on right)
+and updates their contentColor configuration accordingly.
+"""
+import sys
+import os
+import re
+import shutil
+import subprocess
+from urllib.parse import unquote
+from pathlib import Path
+from PIL import Image
+
+def _resolve_wallpaper_file(raw_path: str) -> str:
+    clean = unquote(raw_path.strip().replace("file://", ""))
+    if not clean or not os.path.exists(clean):
+        return ""
+    if os.path.isfile(clean):
+        return clean
+    if os.path.isdir(clean):
+        for sub in ("contents/images", "contents/images_dark", ""):
+            search_dir = Path(clean) / sub if sub else Path(clean)
+            if search_dir.is_dir():
+                imgs = sorted(
+                    p for p in search_dir.iterdir()
+                    if p.is_file() and p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")
+                )
+                if imgs:
+                    return str(imgs[-1])
+    return ""
+
+def detect_wallpaper() -> str:
+    appletsrc = Path.home() / ".config" / "plasma-org.kde.plasma.desktop-appletsrc"
+    if appletsrc.exists():
+        try:
+            found_wp = ""
+            with open(appletsrc, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    if line.startswith("Image="):
+                        val = line.split("=", 1)[1].strip()
+                        resolved = _resolve_wallpaper_file(val)
+                        if resolved:
+                            found_wp = resolved
+            if found_wp:
+                return found_wp
+        except Exception:
+            pass
+    # Fallback to default
+    wp_dir = Path.home() / ".local" / "share" / "wallpapers" / "DoodlebookOS"
+    for name in ["DoodlebookOS_Wallpaper_LIGHT", "DoodlebookOS_Wallpaper_DARK"]:
+        for ext in [".jpeg", ".jpg", ".png", ".webp"]:
+            cand = wp_dir / f"{name}{ext}"
+            if cand.exists():
+                return str(cand)
+    return ""
+
+def get_region_luminance(im: Image.Image, x0_pct: float, x1_pct: float, y0_pct: float, y1_pct: float) -> float:
+    w, h = im.size
+    x0 = int(w * x0_pct)
+    x1 = max(x0 + 1, int(w * x1_pct))
+    y0 = int(h * y0_pct)
+    y1 = max(y0 + 1, int(h * y1_pct))
+    crop = im.crop((x0, y0, x1, y1)).convert("RGB")
+    b = crop.tobytes()
+    num_px = len(b) // 3
+    if num_px == 0:
+        return 0.5
+    avg_r = sum(b[0::3]) / num_px
+    avg_g = sum(b[1::3]) / num_px
+    avg_b = sum(b[2::3]) / num_px
+    return (0.299 * avg_r + 0.587 * avg_g + 0.114 * avg_b) / 255.0
+
+def update_topbar_colors(wp_path: str = None):
+    if wp_path:
+        wp_path = _resolve_wallpaper_file(wp_path) or wp_path
+    else:
+        wp_path = detect_wallpaper()
+    if not wp_path or not os.path.isfile(wp_path):
+        return
+
+    try:
+        im = Image.open(wp_path)
+    except Exception as e:
+        print(f"[doodlebookos-topbar-color] Cannot open wallpaper {wp_path}: {e}")
+        return
+
+    lum_left = get_region_luminance(im, 0.0, 0.25, 0.0, 0.05)
+    lum_right = get_region_luminance(im, 0.75, 1.0, 0.0, 0.05)
+
+    color_left = "#000000" if lum_left > 0.55 else "#ffffff"
+    color_right = "#000000" if lum_right > 0.55 else "#ffffff"
+
+    appletsrc_path = Path.home() / ".config" / "plasma-org.kde.plasma.desktop-appletsrc"
+    if not appletsrc_path.exists():
+        return
+
+    try:
+        content = appletsrc_path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return
+
+    # Dynamically detect top panel containment IDs (location=3) and applet (containment_id, applet_id) pairs
+    top_panel_cids = set()
+    for m in re.finditer(r'\[Containments\]\[(\d+)\]\s*\n((?:[^\[]*\n)*)', content):
+        cid, body = m.group(1), m.group(2)
+        if re.search(r'^location=3\s*$', body, re.MULTILINE):
+            top_panel_cids.add(cid)
+
+    clock_targets = []
+    cluster_targets = []
+
+    for m in re.finditer(r'\[Containments\]\[(\d+)\]\[Applets\]\[(\d+)\]\s*\n((?:[^\[]*\n)*)', content):
+        cid, aid, body = m.group(1), m.group(2), m.group(3)
+        if top_panel_cids and cid not in top_panel_cids:
+            continue
+        pm = re.search(r'^plugin=(.+)$', body, re.MULTILINE)
+        if not pm:
+            continue
+        plugin = pm.group(1).strip()
+        if plugin in ("org.doodlebookos.datetime", "DoodlebookOS-DateTime"):
+            clock_targets.append((cid, aid))
+        elif plugin in ("org.doodlebookos.statuscluster", "DoodlebookOS-StatusCluster"):
+            cluster_targets.append((cid, aid))
+
+    for cid, aid in clock_targets:
+        subprocess.run(["kwriteconfig6", "--file", "plasma-org.kde.plasma.desktop-appletsrc",
+                        "--group", "Containments", "--group", cid, "--group", "Applets", "--group", aid,
+                        "--group", "Configuration", "--group", "Appearance", "--key", "contentColor", color_left],
+                       check=False)
+
+    for cid, aid in cluster_targets:
+        subprocess.run(["kwriteconfig6", "--file", "plasma-org.kde.plasma.desktop-appletsrc",
+                        "--group", "Containments", "--group", cid, "--group", "Applets", "--group", aid,
+                        "--group", "Configuration", "--group", "General", "--key", "contentColor", color_right],
+                       check=False)
+
+    # Also force immediate in-memory refresh of all top bar applets via PlasmaShell evaluateScript
+    js_script = f"""
+    var allPanels = panels();
+    for (var i = 0; i < allPanels.length; ++i) {{
+        var p = allPanels[i];
+        var ws = p.widgets();
+        for (var j = 0; j < ws.length; ++j) {{
+            var w = ws[j];
+            if (w.type === "org.doodlebookos.datetime" || w.type === "DoodlebookOS-DateTime") {{
+                w.currentConfigGroup = ["Appearance"];
+                w.writeConfig("contentColor", "{color_left}");
+            }} else if (w.type === "org.doodlebookos.statuscluster" || w.type === "DoodlebookOS-StatusCluster") {{
+                w.currentConfigGroup = ["General"];
+                w.writeConfig("contentColor", "{color_right}");
+            }}
+        }}
+    }}
+    """
+    qdbus_bin = shutil.which("qdbus-qt6") or shutil.which("qdbus6") or shutil.which("qdbus")
+    if qdbus_bin:
+        subprocess.run([qdbus_bin, "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", js_script],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    elif shutil.which("gdbus"):
+        subprocess.run(["gdbus", "call", "--session", "--dest", "org.kde.plasmashell",
+                        "--object-path", "/PlasmaShell", "--method", "org.kde.PlasmaShell.evaluateScript", js_script],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+    print(f"[doodlebookos-topbar-color] lum_left={lum_left:.2f} ({color_left}), lum_right={lum_right:.2f} ({color_right})")
+
+def run_daemon():
+    import time
+    appletsrc_path = Path.home() / ".config" / "plasma-org.kde.plasma.desktop-appletsrc"
+    last_mtime = 0
+    last_wp = ""
+    last_targets_count = 0
+
+    def _count_topbar_applets() -> int:
+        if not appletsrc_path.exists():
+            return 0
+        try:
+            txt = appletsrc_path.read_text(encoding="utf-8", errors="ignore")
+            return len(re.findall(r'plugin=(?:org\.doodlebookos\.datetime|DoodlebookOS-DateTime|org\.doodlebookos\.statuscluster|DoodlebookOS-StatusCluster)\b', txt))
+        except Exception:
+            return 0
+
+    # Initial run
+    update_topbar_colors()
+    last_wp = detect_wallpaper()
+    last_targets_count = _count_topbar_applets()
+    if appletsrc_path.exists():
+        try:
+            last_mtime = appletsrc_path.stat().st_mtime
+        except Exception:
+            pass
+
+    print("[doodlebookos-topbar-color] Daemon started, monitoring wallpaper changes...")
+    while True:
+        try:
+            time.sleep(1.5)
+            if not appletsrc_path.exists():
+                continue
+            cur_mtime = appletsrc_path.stat().st_mtime
+            if cur_mtime != last_mtime:
+                last_mtime = cur_mtime
+                cur_wp = detect_wallpaper()
+                cur_targets_count = _count_topbar_applets()
+                if cur_wp and (cur_wp != last_wp or cur_targets_count != last_targets_count):
+                    last_wp = cur_wp
+                    last_targets_count = cur_targets_count
+                    update_topbar_colors(cur_wp)
+                    if appletsrc_path.exists():
+                        last_mtime = appletsrc_path.stat().st_mtime
+        except KeyboardInterrupt:
+            break
+        except Exception:
+            time.sleep(3.0)
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] in ("--daemon", "-d"):
+        run_daemon()
+    else:
+        wp = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
+        update_topbar_colors(wp)

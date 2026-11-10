@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# CMake / C++ build artifacts
+build/
+cmake-build-*/
+*.so
+*.o
+*.a
+
+# Editor / OS temporary files
+*~
+*.bak
+*.orig
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Category": "",
+        "Description": "DoodlebookOS Light Plasma Style for KDE Plasma 6",
+        "EnabledByDefault": true,
+        "Id": "DoodlebookOS_Light",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS Light",
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "X-Plasma-API": "5.0"
+}

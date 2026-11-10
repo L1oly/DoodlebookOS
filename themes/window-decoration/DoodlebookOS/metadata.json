@@ -1,0 +1,32 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "KDE Plasma Developers"
+            },
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Description": "Official DoodlebookOS Window Decoration",
+        "Description[pl]": "Dekoracja okien DoodlebookOS",
+        "Id": "org.doodlebookos.decoration",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS",
+        "Name[pl]": "DoodlebookOS",
+        "ServiceTypes": [
+            "org.kde.kdecoration3"
+        ],
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "org.kde.kdecoration3": {
+        "blur": false,
+        "recommendedBorderSize": "None",
+        "styles": [
+            "shadow",
+            "titled"
+        ]
+    }
+}

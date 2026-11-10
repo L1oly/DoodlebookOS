@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="340" height="320" version="1.1">
+  <defs id="defs-plasma-frame">
+    <style type="text/css" id="current-color-scheme">
+      .ColorScheme-Text { color: #eff0f1; }
+      .ColorScheme-Background { color: #232629; }
+      .ColorScheme-Highlight { color: #3daee9; }
+    </style>
+
+    <linearGradient id="shadow-linear">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.28" />
+      <stop offset="0.33" stop-color="#000000" stop-opacity="0.14" />
+      <stop offset="0.66" stop-color="#000000" stop-opacity="0.05" />
+      <stop offset="1" stop-color="#000000" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Cienie krawędziowe (liniowe) -->
+    <linearGradient id="sh-top-grad" x1="0" y1="10" x2="0" y2="0" gradientUnits="userSpaceOnUse" xlink:href="#shadow-linear" />
+    <linearGradient id="sh-bottom-grad" x1="0" y1="32" x2="0" y2="42" gradientUnits="userSpaceOnUse" xlink:href="#shadow-linear" />
+    <linearGradient id="sh-left-grad" x1="10" y1="0" x2="0" y2="0" gradientUnits="userSpaceOnUse" xlink:href="#shadow-linear" />
+    <linearGradient id="sh-right-grad" x1="32" y1="0" x2="42" y2="0" gradientUnits="userSpaceOnUse" xlink:href="#shadow-linear" />
+
+    <!-- Cienie narożne (radialne - idealnie ciągłe z krawędziami) -->
+    <linearGradient id="shadow-corner-stops">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.28" />
+      <stop offset="0.76190" stop-color="#000000" stop-opacity="0.28" />
+      <stop offset="0.84048" stop-color="#000000" stop-opacity="0.14" />
+      <stop offset="0.91905" stop-color="#000000" stop-opacity="0.05" />
+      <stop offset="1" stop-color="#000000" stop-opacity="0" />
+    </linearGradient>
+
+    <radialGradient id="sh-radial-tl" cx="42" cy="42" r="42" fx="42" fy="42" gradientUnits="userSpaceOnUse" xlink:href="#shadow-corner-stops" />
+    <radialGradient id="sh-radial-tr" cx="0" cy="42" r="42" fx="0" fy="42" gradientUnits="userSpaceOnUse" xlink:href="#shadow-corner-stops" />
+    <radialGradient id="sh-radial-bl" cx="42" cy="0" r="42" fx="42" fy="0" gradientUnits="userSpaceOnUse" xlink:href="#shadow-corner-stops" />
+    <radialGradient id="sh-radial-br" cx="0" cy="0" r="42" fx="0" fy="0" gradientUnits="userSpaceOnUse" xlink:href="#shadow-corner-stops" />
+  </defs>
+
+  <!-- ========================================== -->
+  <!-- SEKCJA 1: WIDOCZNA RAMKA OKNA (0..136, 0..136) -->
+  <!-- ========================================== -->
+
+  <!-- LEWY GÓRNY RÓG (topleft, promień 32px) -->
+  <path id="topleft" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+        d="M 32,0 C 14.327,0 0,14.327 0,32 V 32 H 32 Z" />
+
+  <!-- GÓRA (top) -->
+  <rect id="top" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+        x="32" y="0" width="80" height="32" />
+
+  <!-- PRAWY GÓRNY RÓG (topright, promień 32px) -->
+  <path id="topright" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+        d="M 112,0 C 129.673,0 144,14.327 144,32 H 112 Z" />
+
+  <!-- LEWA KRAWĘDŹ (left) -->
+  <rect id="left" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+        x="0" y="32" width="32" height="80" />
+
+  <!-- ŚRODEK (center) -->
+  <rect id="center" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+        x="32" y="32" width="80" height="80" />
+
+  <!-- PRAWA KRAWĘDŹ (right) -->
+  <rect id="right" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+        x="112" y="32" width="32" height="80" />
+
+  <!-- LEWY DOLNY RÓG (bottomleft, promień 32px) -->
+  <path id="bottomleft" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+        d="M 0,112 C 0,129.673 14.327,144 32,144 V 112 Z" />
+
+  <!-- DÓŁ (bottom) -->
+  <rect id="bottom" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+        x="32" y="112" width="80" height="32" />
+
+  <!-- PRAWY DOLNY RÓG (bottomright, promień 32px) -->
+  <path id="bottomright" class="ColorScheme-Background" style="fill:currentColor; fill-opacity:0.82;"
+        d="M 144,112 C 144,129.673 129.673,144 112,144 V 112 Z" />
+
+  <!-- MARGINESY BEZPIECZEŃSTWA (hint-*-margin) = 16px -->
+  <rect id="hint-top-margin" x="62" y="0" width="8" height="0.01" fill="none" opacity="0.001" />
+  <rect id="hint-bottom-margin" x="62" y="143.99" width="8" height="0.01" fill="none" opacity="0.001" />
+  <rect id="hint-left-margin" x="0" y="62" width="0.01" height="8" fill="none" opacity="0.001" />
+  <rect id="hint-right-margin" x="143.99" y="62" width="0.01" height="8" fill="none" opacity="0.001" />
+
+
+  <!-- ========================================== -->
+  <!-- SEKCJA 2: MASKA DO WYCINANIA I ROZMYCIA (mask-*) -->
+  <!-- ========================================== -->
+
+  <path id="mask-topleft" fill="#000000"
+        d="M 0.75,192 H 0 H 32 V 160 V 160.75 C 14.741,160.75 0.75,174.741 0.75,192 Z" />
+
+  <rect id="mask-top" fill="#000000"
+        x="32" y="160" width="80" height="32" />
+
+  <path id="mask-topright" fill="#000000"
+        d="M 143.25,192 H 144 H 112 V 160 V 160.75 C 129.259,160.75 143.25,174.741 143.25,192 Z" />
+
+  <rect id="mask-left" fill="#000000"
+        x="0" y="192" width="32" height="80" />
+
+  <rect id="mask-center" fill="#000000"
+        x="32" y="192" width="80" height="80" />
+
+  <rect id="mask-right" fill="#000000"
+        x="112" y="192" width="32" height="80" />
+
+  <path id="mask-bottomleft" fill="#000000"
+        d="M 0.75,272 H 0 H 32 V 304 V 303.25 C 14.741,303.25 0.75,289.259 0.75,272 Z" />
+
+  <rect id="mask-bottom" fill="#000000"
+        x="32" y="272" width="80" height="32" />
+
+  <path id="mask-bottomright" fill="#000000"
+        d="M 143.25,272 H 144 H 112 V 304 V 303.25 C 129.259,303.25 143.25,289.259 143.25,272 Z" />
+
+
+  <!-- ========================================== -->
+  <!-- SEKCJA 3: CIENIE ZEWNĘTRZNE (shadow-*) -->
+  <!-- ========================================== -->
+
+  <!-- LEWY GÓRNY RÓG CIENIA (38x38px) -->
+  <g id="shadow-topleft" transform="translate(160, 0)">
+    <path fill="url(#sh-radial-tl)"
+          d="M 0,0 H 42 V 10 C 24.327,10 10,24.327 10,42 H 0 Z" />
+    <path d="M 10,42 C 10,24.327 24.327,10 42,10 V 42 H 10 Z" opacity="0.001" fill="#000000" />
+  </g>
+
+  <!-- GÓRNY CIEŃ (80x38px) -->
+  <g id="shadow-top" transform="translate(202, 0)">
+    <rect x="0" y="0" width="80" height="10" fill="url(#sh-top-grad)" />
+    <rect x="0" y="10" width="80" height="32" opacity="0.001" fill="#000000" />
+  </g>
+
+  <!-- PRAWY GÓRNY RÓG CIENIA (38x38px) -->
+  <g id="shadow-topright" transform="translate(282, 0)">
+    <path fill="url(#sh-radial-tr)"
+          d="M 0,0 H 42 V 42 H 32 C 32,24.327 17.673,10 0,10 Z" />
+    <path d="M 0,10 C 17.673,10 32,24.327 32,42 H 0 Z" opacity="0.001" fill="#000000" />
+  </g>
+
+  <!-- LEWY CIEŃ (38x80px) -->
+  <g id="shadow-left" transform="translate(160, 42)">
+    <rect x="0" y="0" width="10" height="80" fill="url(#sh-left-grad)" />
+    <rect x="10" y="0" width="32" height="80" opacity="0.001" fill="#000000" />
+  </g>
+
+  <!-- ŚRODEK CIENIA (80x80px) -->
+  <rect id="shadow-center" x="202" y="42" width="80" height="80" opacity="0.001" fill="#000000" />
+
+  <!-- PRAWY CIEŃ (38x80px) -->
+  <g id="shadow-right" transform="translate(282, 42)">
+    <rect x="0" y="0" width="32" height="80" opacity="0.001" fill="#000000" />
+    <rect x="32" y="0" width="10" height="80" fill="url(#sh-right-grad)" />
+  </g>
+
+  <!-- LEWY DOLNY RÓG CIENIA (38x38px) -->
+  <g id="shadow-bottomleft" transform="translate(160, 122)">
+    <path fill="url(#sh-radial-bl)"
+          d="M 0,0 H 10 C 10,17.673 24.327,32 42,32 V 42 H 0 Z" />
+    <path d="M 10,0 C 10,17.673 24.327,32 42,32 V 0 Z" opacity="0.001" fill="#000000" />
+  </g>
+
+  <!-- DOLNY CIEŃ (80x38px) -->
+  <g id="shadow-bottom" transform="translate(202, 122)">
+    <rect x="0" y="0" width="80" height="32" opacity="0.001" fill="#000000" />
+    <rect x="0" y="32" width="80" height="10" fill="url(#sh-bottom-grad)" />
+  </g>
+
+  <!-- PRAWY DOLNY RÓG CIENIA (38x38px) -->
+  <g id="shadow-bottomright" transform="translate(282, 122)">
+    <path fill="url(#sh-radial-br)"
+          d="M 32,0 H 42 V 42 H 0 V 32 C 17.673,32 32,17.673 32,0 Z" />
+    <path d="M 0,0 H 32 C 32,17.673 17.673,32 0,32 Z" opacity="0.001" fill="#000000" />
+  </g>
+
+  <!-- MARGINESY CIENIA (shadow-hint-*-margin) = 10px -->
+  <rect id="shadow-hint-top-margin" x="238" y="0" width="8" height="10" fill="none" opacity="0.001" />
+  <rect id="shadow-hint-bottom-margin" x="238" y="154" width="8" height="10" fill="none" opacity="0.001" />
+  <rect id="shadow-hint-left-margin" x="160" y="78" width="10" height="8" fill="none" opacity="0.001" />
+  <rect id="shadow-hint-right-margin" x="314" y="78" width="10" height="8" fill="none" opacity="0.001" />
+
+  <!-- DOPASOWANIE CIENIA (shadow-hint-*-inset) = 10px -->
+  <rect id="shadow-hint-top-inset" x="242" y="0" width="8" height="10" fill="none" opacity="0.001" />
+  <rect id="shadow-hint-bottom-inset" x="242" y="154" width="8" height="10" fill="none" opacity="0.001" />
+  <rect id="shadow-hint-left-inset" x="160" y="82" width="10" height="8" fill="none" opacity="0.001" />
+  <rect id="shadow-hint-right-inset" x="314" y="82" width="10" height="8" fill="none" opacity="0.001" />
+</svg>

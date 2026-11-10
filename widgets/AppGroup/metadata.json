@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Category": "Utilities",
+        "Description": "DoodlebookOS desktop app group with mini preview and popup drawer",
+        "Icon": "folder",
+        "Id": "org.doodlebookos.appgroup",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS App Group",
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

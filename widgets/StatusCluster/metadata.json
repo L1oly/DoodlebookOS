@@ -1,0 +1,27 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "KDE Plasma Developers"
+            },
+            {
+                "Email": "maciek.kujawinski@gmail.com",
+                "Name": "Maciej Kujawiński"
+            }
+        ],
+        "Category": "Utilities",
+        "Description": "Unified top-right status cluster with media, notifications, and quick settings",
+        "Icon": "preferences-system-network",
+        "Id": "org.doodlebookos.statuscluster",
+        "License": "GPL-3.0-or-later",
+        "Name": "DoodlebookOS Status Cluster",
+        "Version": "1.0.0",
+        "Website": "https://github.com/PanOptikuum/DoodlebookOS"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": [
+        "org.kde.plasma.notifications"
+    ],
+    "X-Plasma-NotificationAreaCategory": "SystemServices"
+}
