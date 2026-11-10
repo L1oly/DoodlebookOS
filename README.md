@@ -46,6 +46,10 @@
 | :---: | :---: |
 | <img src=".github/assets/demo_appgroup.gif" width="100%" alt="Desktop Folders Demo"> | <img src=".github/assets/demo_calendar.gif" width="100%" alt="Calendar Demo"> |
 
+| Material 3 Context Menu & Widgets | Notification Center |
+| :---: | :---: |
+| <img src=".github/assets/screenshot_09_context_menu.jpg" width="100%" alt="Material 3 Context Menu and Desktop Widgets"> | <img src=".github/assets/demo_notifications.gif" width="100%" alt="Notification Center Demo"> |
+
 | OOBE Setup Wizard (Welcome) | OOBE Setup Wizard (Compiling) |
 | :---: | :---: |
 | <img src=".github/assets/screenshot_07_installer_welcome.png" width="100%" alt="Installer Welcome"> | <img src=".github/assets/screenshot_08_installer_progress.png" width="100%" alt="Installer Progress"> |
