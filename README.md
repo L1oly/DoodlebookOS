@@ -1,10 +1,15 @@
-# DoodlebookOS (v0.9 Alpha)
-### Material 3 Expressive Desktop Suite for KDE Plasma 6
+<p align="center">
+  <img src=".github/assets/banner_logo.jpg" alt="DoodlebookOS" width="500">
+</p>
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![KDE Plasma](https://img.shields.io/badge/KDE_Plasma-6.0%2B-blue?logo=kde&logoColor=white)](https://kde.org)
-[![Wayland](https://img.shields.io/badge/Display-Wayland-brightgreen)](https://wayland.freedesktop.org)
-[![Support on Ko-fi](https://img.shields.io/badge/Support_on-Ko--fi-ff5e5b?logo=kofi&logoColor=white)](https://ko-fi.com/panoptikuum)
+<h3 align="center">Material 3 Expressive Desktop Suite for KDE Plasma 6</h3>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a>
+  <a href="https://kde.org"><img src="https://img.shields.io/badge/KDE_Plasma-6.0%2B-blue?logo=kde&logoColor=white" alt="KDE Plasma"></a>
+  <a href="https://wayland.freedesktop.org"><img src="https://img.shields.io/badge/Display-Wayland-brightgreen" alt="Wayland"></a>
+  <a href="https://ko-fi.com/panoptikuum"><img src="https://img.shields.io/badge/Support_on-Ko--fi-ff5e5b?logo=kofi&logoColor=white" alt="Support on Ko-fi"></a>
+</p>
 
 **DoodlebookOS** is a comprehensive Material 3 Expressive desktop environment suite crafted natively for **KDE Plasma 6 on Wayland**. It recreates the clean, unified Android PC / Googlebook desktop experience featuring custom QML plasmoids, native C++ application styles and window decorations, real-time wallpaper contrast adaptation, dedicated icon personalizers, and a guided graphical setup wizard.
 
