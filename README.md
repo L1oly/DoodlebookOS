@@ -11,7 +11,16 @@
   <a href="https://ko-fi.com/panoptikuum"><img src="https://img.shields.io/badge/Support_on-Ko--fi-ff5e5b?logo=kofi&logoColor=white" alt="Support on Ko-fi"></a>
 </p>
 
-**DoodlebookOS** is a comprehensive Material 3 Expressive desktop environment suite crafted natively for **KDE Plasma 6 on Wayland**. It recreates the clean, unified Android PC / GooglebookOS desktop experience featuring custom QML plasmoids, native C++ application styles and window decorations, real-time wallpaper contrast adaptation, dedicated icon personalizers, and a guided graphical setup wizard.
+<p align="center">
+  <a href="#key-features">Key Features</a> •
+  <a href="#system-prerequisites">Prerequisites</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#switching-dark--light-mode">Usage</a> •
+  <a href="#uninstallation--restoring-backups">Uninstall</a> •
+  <a href="#roadmap-to-beta-v10">Roadmap</a>
+</p>
+
+**DoodlebookOS** is a comprehensive Material 3 Expressive desktop environment suite crafted natively for **KDE Plasma 6 on Wayland**. It recreates the clean, unified Android PC / GooglebookOS-inspired desktop experience featuring custom QML plasmoids, native C++ application styles and window decorations, real-time wallpaper contrast adaptation, dedicated icon personalizers, and a guided graphical setup wizard.
 
 <p align="center">
   <img src=".github/assets/screenshot_01_desktop.png" alt="DoodlebookOS Desktop Preview" width="100%">
@@ -57,7 +66,8 @@
 | **Reference Platform (Tier 1)** | **Fedora 45 (KDE Plasma Desktop Edition)** | The exact reference environment where DoodlebookOS is developed and verified. |
 | **Desktop Environment** | **KDE Plasma 6.8.2+** | **Plasma 5 is not supported** (Qt6 / KF6 architecture required). |
 | **Display Server** | **Wayland** | **Wayland session is required**. X11 is not supported due to Wayland layer-shell popups and fractional scaling. |
-| **Other Distros (Experimental)** | **Arch Linux**, **openSUSE Tumbleweed**, **Ubuntu 24.10+** | Community testing tier; may require manual dependency resolution. |
+| **Other Distros (Experimental)** | **Arch Linux**, **openSUSE Tumbleweed**, **KDE neon / Kubuntu 26.10+** | Community testing tier; requires up-to-date Qt6/KF6 packages and may need manual dependency resolution. |
+| **Virtual Machines (VM)** | **3D Acceleration Required (`VirtIO-GPU` / `VirGL`)** | Required when testing in QEMU/KVM, Boxes, or VirtualBox for KWin Wayland compositing and real-time top bar luminance sampling. |
 
 ---
 
@@ -66,15 +76,9 @@
 If you do not have Linux installed yet, you can try DoodlebookOS on a clean setup by following these simple steps:
 
 1. **Download Fedora KDE:** Grab the official ISO for [Fedora KDE Desktop Edition](https://fedoraproject.org/spins/kde/).
-2. **Create a Bootable USB:** Flash the downloaded ISO to a USB flash drive using a tool like [Etcher](https://etcher.balena.io/) or Fedora Media Writer.
+2. **Create a Bootable USB:** Flash the downloaded ISO to a USB flash drive using a tool like [Fedora Media Writer](https://fedoraproject.org/workstation/download) or [Balena Etcher](https://etcher.balena.io/).
 3. **Install Fedora:** Boot from the USB drive and complete the guided installation.
-4. **Install DoodlebookOS:** Open the terminal (Konsole) on your fresh Fedora desktop and run:
-   ```bash
-   git clone https://github.com/PanOptikuum/DoodlebookOS.git
-   cd DoodlebookOS
-   chmod +x install-gui.sh
-   ./install-gui.sh
-   ```
+4. **Install DoodlebookOS:** Boot into your fresh Fedora desktop and follow the [Graphical Setup Wizard](#1-graphical-setup-wizard-recommended) instructions below.
 
 ---
 
@@ -85,18 +89,18 @@ Here is exactly what the installer does on your computer and why:
 ### 1. Administrator Privileges (`sudo` / `pkexec`)
 Administrator privileges are requested during the prerequisite phase only for:
 - **System Build & Runtime Dependencies:** Installs required development packages (`cmake`, `ninja`, Qt6/KF6 compilation headers, `python3-pyside6`, `python3-pillow`) through your distribution's native package manager (`dnf`, `pacman`, `apt-get`, or `zypper`).
-- **Klipper Clipboard Override:** Backs up `/usr/lib64/qt6/qml/org/kde/plasma/private/clipboard/KlipperPopup.qml` to `.orig` and installs the Material 3 masonry clipboard popup override (`Meta+V`).
+- **Klipper Clipboard Override:** Backs up the system `KlipperPopup.qml` (located in `/usr/lib64/qt6/qml/org/kde/plasma/private/clipboard/` or `/usr/lib/qt6/qml/...` depending on your distro) to `.orig` and installs the Material 3 masonry clipboard popup override (`Meta+V`). *(Note: Major system updates to `plasma-workspace` may overwrite this file; re-running the installer will restore the custom popup).*
 
 ### 2. User-Space Installation (`~/.local/`)
-All core components are compiled and installed strictly in your user space, with **zero pollution of root directories**:
+Apart from the Klipper clipboard override above, all core components are compiled and installed strictly in your user space:
 - **Plasmoids & Containments:** Installed into `~/.local/share/plasma/plasmoids/`.
-- **C++ Native Plugins:** Compiled via `cmake` and installed into `~/.local/lib64/` (Application Style `doodlebookos6.so`, Window Decoration `org.doodlebookos.decoration.so`, and Applet bindings).
+- **C++ Native Plugins:** Compiled via `cmake` and installed into `~/.local/lib64/` or `~/.local/lib/` (Application Style `doodlebookos6.so`, Window Decoration `org.doodlebookos.decoration.so`, and Applet bindings).
 - **Themes & Assets:** Installed into `~/.local/share/` (Plasma desktop themes, color schemes, cursors, fonts, wallpapers).
 - **Desktop Tools:** `Icon Studio` installed to `~/.local/bin/doodlebook-icon-studio`.
 
 ### 3. Automated Configuration Backup
 Before any panel layout or theme configuration is altered, the installer creates an automatic snapshot of your existing KDE configuration in:
-```
+```text
 ~/.config/doodlebookos-backups/latest
 ```
 You can restore your original desktop configuration at any time by running `./uninstall.sh`.
@@ -156,7 +160,7 @@ chmod +x install.sh
 
 ## Switching Dark & Light Mode
 
-You can toggle between Dark and Light mode at any time using the Quick Settings **Dark theme** tile in the top-right Status Cluster, or via the command line:
+You can toggle between Dark and Light mode at any time using the Quick Settings **Dark theme** tile in the top-right Status Cluster, or via the command line (if `~/.local/bin` is in your `$PATH`, you can run `dostheme` directly):
 
 ```bash
 ~/.local/bin/dostheme toggle   # Toggle between Dark and Light mode
@@ -210,7 +214,7 @@ If you enjoy DoodlebookOS and want to support its ongoing development, consider 
 - [`system-overrides/`](system-overrides/README.md) — KRunner DBus bridge and Klipper masonry clipboard override
 - [`extras/`](extras/README.md) — Cursors, Google Sans Flex font, wallpapers, and background contrast daemons
 - [`tools/`](tools/icon-studio/README.md) — Icon Studio personalizer
-- `installer/` — PySide6 & QML graphical installer wizard and installation backend
+- [`installer/`](installer/) — PySide6 & QML graphical installer wizard and installation backend
 
 ---
 
@@ -223,4 +227,4 @@ If you enjoy DoodlebookOS and want to support its ongoing development, consider 
 
 ## Disclaimer
 
-DoodlebookOS is an independent open-source project and is not affiliated with, sponsored, or endorsed by Google LLC. GooglebookOS, Pixel, Android, and Material You / Material Design are trademarks of Google LLC.
+DoodlebookOS is an independent open-source project and is not affiliated with, sponsored, or endorsed by Google LLC. ChromeOS, Chromebook, Pixel, Android, and Material You / Material Design are trademarks of Google LLC.
