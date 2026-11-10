@@ -48,7 +48,7 @@ To ensure a flawless experience, please review the system prerequisites before r
 
 ## What the Installer Does & System Permissions
 
-We believe in complete transparency. Here is exactly what the installer does on your computer and why:
+Here is exactly what the installer does on your computer and why:
 
 ### 1. Administrator Privileges (`sudo` / `pkexec`)
 Administrator privileges are requested during the prerequisite phase only for:
