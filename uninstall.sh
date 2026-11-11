@@ -20,12 +20,19 @@ if command -v systemctl &>/dev/null; then
 fi
 rm -f "$HOME/.config/systemd/user/doodlebookos-topbar.service"
 rm -f "$HOME/.config/systemd/user/plasma-krunner.service"
+pkill -f "doodlebook-popover daemon" 2>/dev/null || true
 rm -f "$HOME/.local/bin/doodlebookos-topbar-color" \
       "$HOME/.local/bin/dostheme" \
       "$HOME/.local/bin/doodlebook-krunner-bridge.py" \
-      "$HOME/.local/bin/doodlebook-icon-studio"
+      "$HOME/.local/bin/doodlebook-icon-studio" \
+      "$HOME/.local/bin/doodlebook-popover" \
+      "$HOME/.local/bin/doodlebook-gamma"
 rm -f "$HOME/.local/share/applications/doodlebook-icon-studio.desktop"
-rm -rf "$HOME/.local/share/doodlebookos/icon-studio"
+rm -rf "$HOME/.local/share/doodlebookos/icon-studio" \
+       "$HOME/.local/share/doodlebookos/popover"
+rm -f "${XDG_RUNTIME_DIR:-/tmp}/doodlebook-popover.sock" \
+      "${XDG_RUNTIME_DIR:-/tmp}/doodlebook-popover-state.json" \
+      "${XDG_RUNTIME_DIR:-/tmp}/doodlebook-popover.lock" 2>/dev/null || true
 rm -f "$HOME/.config/environment.d/10-qt-plugins.conf"
 
 if command -v systemctl &>/dev/null; then

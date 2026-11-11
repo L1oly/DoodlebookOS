@@ -1,0 +1,3 @@
+module org.kde.plasma.private.brightnesscontrolplugin
+ScreenBrightnessControl 1.0 ScreenBrightnessControl.qml
+NightLightInhibitor 1.0 NightLightInhibitor.qml

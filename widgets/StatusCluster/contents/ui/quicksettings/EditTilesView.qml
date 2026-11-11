@@ -79,7 +79,9 @@ Item {
             tiles: [
                 { id: "wifi", name: i18n("Wi-Fi"), icon: Qt.resolvedUrl("icons/wifi.svg") },
                 { id: "bluetooth", name: i18n("Bluetooth"), icon: Qt.resolvedUrl("icons/bluetooth.svg") },
-                { id: "quickshare", name: i18n("Quick\\nShare"), icon: Qt.resolvedUrl("icons/quickshare.svg") }
+                { id: "quickshare", name: i18n("Quick\\nShare"), icon: Qt.resolvedUrl("icons/quickshare.svg") },
+                { id: "localshare", name: i18n("Local\\nShare"), icon: Qt.resolvedUrl("icons/localshare.svg") },
+                { id: "tailscale", name: i18n("Tail\\nscale"), icon: Qt.resolvedUrl("icons/tailscale.svg") }
             ]
         },
         {
@@ -88,6 +90,8 @@ Item {
             icon: Qt.resolvedUrl("icons/laptop_screen.svg"),
             tiles: [
                 { id: "battery_saver", name: i18n("Power &\\nbattery"), icon: Qt.resolvedUrl("icons/battery_saver.svg") },
+                { id: "powerprofiles", name: i18n("Power\\nprofile"), icon: Qt.resolvedUrl("icons/power_profiles.svg") },
+                { id: "caffeine", name: i18n("Caffeine"), icon: Qt.resolvedUrl("icons/caffeine.svg") },
                 { id: "dark_mode", name: i18n("Dark\\ntheme"), icon: Qt.resolvedUrl("icons/dark_mode.svg") },
                 { id: "modes", name: i18n("Do not\\ndisturb"), icon: Qt.resolvedUrl("icons/modes.svg") }
             ]

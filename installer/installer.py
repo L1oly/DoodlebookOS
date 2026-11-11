@@ -507,6 +507,38 @@ class InstallWorker(QThread):
                 shutil.copy2(theme_helper, dest_theme_helper)
                 dest_theme_helper.chmod(0o755)
 
+            # Instant Quick Settings / Notification Center popover daemon
+            popover_src = self.repo_dir / "tools" / "popover" / "doodlebook-popover"
+            if popover_src.exists():
+                dest_popover = bin_dir / "doodlebook-popover"
+                shutil.copy2(popover_src, dest_popover)
+                dest_popover.chmod(0o755)
+            popover_imports = self.repo_dir / "tools" / "popover" / "qml" / "imports"
+            if popover_imports.exists():
+                dest_popover_imports = home / ".local" / "share" / "doodlebookos" / "popover" / "imports"
+                if dest_popover_imports.exists():
+                    shutil.rmtree(dest_popover_imports)
+                dest_popover_imports.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(popover_imports, dest_popover_imports)
+
+            # Night-light helper (wlr-gamma-control). Built from the tiny C
+            # source because no extra package is required at runtime.
+            gamma_build = self.repo_dir / "tools" / "popover" / "gamma" / "build.sh"
+            if gamma_build.exists():
+                gamma_bin = bin_dir / "doodlebook-gamma"
+                try:
+                    subprocess.run(
+                        ["/bin/sh", str(gamma_build), str(gamma_bin)],
+                        check=True,
+                        timeout=120,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+                    gamma_bin.chmod(0o755)
+                except (OSError, subprocess.SubprocessError) as exc:
+                    print(f"Warning: could not build doodlebook-gamma: {exc}")
+
             # KRunner Bridge Daemon (Launcher Replacement)
             bridge_src = self.repo_dir / "system-overrides" / "krunner-bridge" / "doodlebook-krunner-bridge.py"
             krunner_svc_src = self.repo_dir / "system-overrides" / "krunner-bridge" / "systemd" / "plasma-krunner.service"

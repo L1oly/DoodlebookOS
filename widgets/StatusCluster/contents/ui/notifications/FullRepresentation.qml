@@ -25,7 +25,9 @@ PlasmaExtras.Representation {
 
     function i18n(k, a1, a2) { return I18n.t(k, a1, a2); }
 
-    required property PlasmoidItem appletInterface
+    // Nullable so the same representation can be hosted by the standalone
+    // Notification Center popover (tools/popover).
+    property var appletInterface: null
     required property PlasmaCore.Action clearHistoryAction
     required property NotificationManager.Notifications historyModel
 
@@ -37,7 +39,14 @@ PlasmaExtras.Representation {
         Kirigami.Theme.inherit: false
     }
 
-    readonly property color cardBackgroundColor: buttonThemeScope ? buttonThemeScope.Kirigami.Theme.backgroundColor : Kirigami.Theme.backgroundColor
+    readonly property color cardBackgroundColor: {
+        if (typeof Md3Palette !== "undefined" && Md3Palette && Md3Palette.colors
+                && Md3Palette.colors.surface_container_high) {
+            return Md3Palette.colors.surface_container_high;
+        }
+        return buttonThemeScope ? buttonThemeScope.Kirigami.Theme.backgroundColor
+                                : Kirigami.Theme.backgroundColor;
+    }
 
     readonly property real dpr: Screen.devicePixelRatio > 0 ? Screen.devicePixelRatio : 1.0
     function snap(val) {
@@ -80,7 +89,7 @@ PlasmaExtras.Representation {
     width: Layout.preferredWidth
     height: Layout.preferredHeight
 
-    Layout.fillHeight: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+    Layout.fillHeight: false
 
     header: null
     footer: null
@@ -106,23 +115,31 @@ PlasmaExtras.Representation {
         target: fullRepresentationRoot.Window ? fullRepresentationRoot.Window.window : null
         function onVisibleChanged() {
             var win = fullRepresentationRoot.Window ? fullRepresentationRoot.Window.window : null;
-            if (win && win.visible) {
-                fullRepresentationRoot.timeTick += 1;
-                if (historyList) {
-                    historyList.positionViewAtBeginning();
-                    historyList.currentIndex = -1;
-                }
-                Qt.callLater(() => {
-                    if (!win || !win.visible || !win.screen) return;
-                    var screenW = win.screen.geometry.width;
-                    var screenX = win.screen.geometry.x;
-                    var rightEdge = screenX + screenW;
-                    var offset = 8;
-                    if ((win.x + win.width) > (rightEdge - offset)) {
-                        win.x = rightEdge - win.width - offset;
-                    }
-                });
+            if (!win || !win.visible) return;
+            fullRepresentationRoot.timeTick += 1;
+            if (historyList) {
+                historyList.positionViewAtBeginning();
+                historyList.currentIndex = -1;
             }
+            // Standalone popovers are placed by the compositor; only the Plasma
+            // applet popup needs its x clamped to the screen edge.
+            if (!fullRepresentationRoot.appletInterface) return;
+            Qt.callLater(() => {
+                if (!win || !win.visible || !win.screen) return;
+                var geo = win.screen.geometry;
+                if (geo === undefined) {
+                    geo = Qt.rect(win.screen.virtualX || 0, win.screen.virtualY || 0,
+                                  win.screen.width, win.screen.height);
+                }
+                if (!geo) return;
+                var screenW = geo.width;
+                var screenX = geo.x;
+                var rightEdge = screenX + screenW;
+                var offset = 8;
+                if ((win.x + win.width) > (rightEdge - offset)) {
+                    win.x = rightEdge - win.width - offset;
+                }
+            });
         }
     }
 

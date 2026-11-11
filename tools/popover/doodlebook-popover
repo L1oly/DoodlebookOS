@@ -1,0 +1,1514 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 DoodlebookOS
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""
+doodlebook-popover — instant independent Quick Settings / Notification Center
+popovers for Waybar (or any launcher).
+
+The heavy QML engine and both windows are created once by a small resident
+daemon. A button click only sends a single line over a Unix socket, so toggling
+a popover is effectively instant (no `plasmawindowed` startup cost).
+
+Usage:
+    doodlebook-popover                     # run the daemon (foreground)
+    doodlebook-popover daemon              # same
+    doodlebook-popover toggle quicksettings
+    doodlebook-popover toggle notifications
+    doodlebook-popover show|hide [quicksettings|notifications]
+    doodlebook-popover hide
+    doodlebook-popover status notifications   # Waybar JSON
+    doodlebook-popover quit
+"""
+
+from __future__ import annotations
+
+import ctypes
+import fcntl
+import glob
+import json
+import os
+import re
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+
+APP_ID = "doodlebook-popover"
+RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
+SOCKET_PATH = os.path.join(RUNTIME_DIR, f"{APP_ID}.sock")
+STATE_PATH = os.path.join(RUNTIME_DIR, f"{APP_ID}-state.json")
+
+POPOVER_TOP_MARGIN = int(os.environ.get("DOODLEBOOK_POPOVER_TOP", "44"))
+POPOVER_SIDE_MARGIN = int(os.environ.get("DOODLEBOOK_POPOVER_SIDE", "8"))
+
+
+# ---------------------------------------------------------------------------
+# Path discovery
+# ---------------------------------------------------------------------------
+
+def _script_dir() -> str:
+    return os.path.dirname(os.path.realpath(__file__))
+
+
+def _repo_dir() -> str:
+    here = _script_dir()
+    # tools/popover -> repo root
+    return os.path.dirname(os.path.dirname(here))
+
+
+def find_standalone_qml_dir() -> str:
+    candidates = [
+        os.environ.get("DOODLEBOOK_POPOVER_QML", ""),
+        os.path.join(_script_dir(), "qml", "standalone"),
+        os.path.join(_repo_dir(), "widgets", "StatusCluster", "contents", "ui", "standalone"),
+        os.path.expanduser(
+            "~/.local/share/plasma/plasmoids/org.doodlebookos.statuscluster/"
+            "contents/ui/standalone"
+        ),
+        "/usr/share/plasma/plasmoids/org.doodlebookos.statuscluster/contents/ui/standalone",
+    ]
+    for candidate in candidates:
+        if candidate and os.path.isfile(os.path.join(candidate, "QuickSettingsPopover.qml")):
+            return candidate
+    raise FileNotFoundError(
+        "Could not find QuickSettingsPopover.qml. Install DoodlebookOS or set "
+        "DOODLEBOOK_POPOVER_QML to the standalone QML directory."
+    )
+
+
+def find_imports_dir() -> str:
+    candidates = [
+        os.environ.get("DOODLEBOOK_POPOVER_IMPORTS", ""),
+        os.path.join(_script_dir(), "qml", "imports"),
+        os.path.expanduser("~/.local/share/doodlebookos/popover/imports"),
+        "/usr/share/doodlebookos/popover/imports",
+    ]
+    for candidate in candidates:
+        if candidate and os.path.isdir(candidate):
+            return candidate
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Material 3 palette (matugen)
+# ---------------------------------------------------------------------------
+
+# Sensible MD3-dark fallback so the popovers are never rendered black when no
+# matugen output exists yet. These are also used to fill gaps in partial files.
+DEFAULT_PALETTE = {
+    "surface": "#111318",
+    "surface_dim": "#111318",
+    "surface_bright": "#37393e",
+    "surface_container_lowest": "#0c0e13",
+    "surface_container_low": "#191c20",
+    "surface_container": "#1d2024",
+    "surface_container_high": "#272a2f",
+    "surface_container_highest": "#32353a",
+    "surface_variant": "#43474e",
+    "surface_tint": "#a4c9fe",
+    "on_surface": "#e1e2e9",
+    "on_surface_variant": "#c3c6cf",
+    "outline": "#8d9199",
+    "outline_variant": "#43474e",
+    "primary": "#a4c9fe",
+    "on_primary": "#00315c",
+    "primary_container": "#1f4876",
+    "on_primary_container": "#d3e3ff",
+    "secondary": "#bcc7db",
+    "on_secondary": "#263141",
+    "secondary_container": "#3c4758",
+    "on_secondary_container": "#d8e3f8",
+    "tertiary": "#d9bde3",
+    "on_tertiary": "#3d2946",
+    "tertiary_container": "#543f5e",
+    "on_tertiary_container": "#f6d9ff",
+    "error": "#ffb4ab",
+    "on_error": "#690005",
+    "error_container": "#93000a",
+    "on_error_container": "#ffdad6",
+    "inverse_surface": "#e1e2e9",
+    "inverse_on_surface": "#2e3035",
+    "inverse_primary": "#3a608f",
+    "scrim": "#000000",
+    "shadow": "#000000",
+}
+
+_CSS_COLOR_RE = re.compile(
+    r"@define-color\s+([A-Za-z0-9_]+)\s+(#[0-9A-Fa-f]{3,8})\b"
+)
+_REPO_TOKEN_RE = re.compile(
+    r"^#\s*([A-Za-z0-9 /]+?)\s*:\s*(#[0-9A-Fa-f]{6})\b", re.MULTILINE
+)
+
+
+def _read_text(path: str) -> str:
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as handle:
+            return handle.read()
+    except OSError:
+        return ""
+
+
+def _parse_css_tokens(path: str) -> dict:
+    return {name: value for name, value in _CSS_COLOR_RE.findall(_read_text(path))}
+
+
+def _rgb_to_hex(value: str) -> str:
+    parts = [part.strip() for part in value.split(",")]
+    if len(parts) < 3:
+        return ""
+    try:
+        red, green, blue = (max(0, min(255, int(part))) for part in parts[:3])
+    except ValueError:
+        return ""
+    return f"#{red:02x}{green:02x}{blue:02x}"
+
+
+def _parse_kde_tokens(path: str) -> dict:
+    """Read a KDE *.colors file and expose it using MD3 token names."""
+    import configparser
+
+    parser = configparser.RawConfigParser(strict=False)
+    parser.optionxform = str
+    try:
+        if not parser.read(path, encoding="utf-8"):
+            return {}
+    except (configparser.Error, OSError):
+        return {}
+
+    def get(section: str, key: str) -> str:
+        try:
+            return _rgb_to_hex(parser.get(section, key))
+        except (configparser.Error, ValueError):
+            return ""
+
+    def first(*values: str) -> str:
+        return next((value for value in values if value), "")
+
+    window_bg = get("Colors:Window", "BackgroundNormal")
+    window_alt = get("Colors:Window", "BackgroundAlternate")
+    window_fg = get("Colors:Window", "ForegroundNormal")
+    window_inactive = get("Colors:Window", "ForegroundInactive")
+    view_bg = get("Colors:View", "BackgroundNormal")
+    button_bg = get("Colors:Button", "BackgroundNormal")
+    button_alt = get("Colors:Button", "BackgroundAlternate")
+    selection_bg = get("Colors:Selection", "BackgroundNormal")
+    selection_fg = get("Colors:Selection", "ForegroundNormal")
+    tooltip_bg = get("Colors:Tooltip", "BackgroundNormal")
+
+    tokens = {
+        "surface": first(window_bg, view_bg),
+        "surface_dim": first(window_bg, view_bg),
+        "surface_container_lowest": first(window_bg, view_bg),
+        "surface_container_low": first(view_bg, window_bg),
+        "surface_container": first(window_alt, button_bg, window_bg),
+        "surface_container_high": first(button_bg, window_alt, window_bg),
+        "surface_container_highest": first(tooltip_bg, button_alt, button_bg),
+        "surface_variant": first(button_alt, button_bg, window_alt),
+        "on_surface": first(window_fg, selection_fg),
+        "on_surface_variant": first(window_inactive, window_fg),
+        "outline": first(window_inactive, window_fg),
+        "outline_variant": first(window_alt, button_bg, window_inactive),
+        "primary": first(selection_bg, get("Colors:Window", "DecorationFocus")),
+        "on_primary": first(selection_fg, window_fg),
+        "primary_container": first(selection_bg, button_bg),
+        "on_primary_container": first(selection_fg, window_fg),
+        "secondary": first(get("Colors:Button", "ForegroundLink"), selection_bg),
+        "on_secondary": first(selection_fg, window_fg),
+        "secondary_container": first(button_alt, button_bg),
+        "on_secondary_container": first(window_fg, selection_fg),
+        "tertiary": first(get("Colors:Button", "ForegroundNeutral"), selection_bg),
+        "on_tertiary": first(selection_fg, window_fg),
+        "error": first(get("Colors:Window", "ForegroundNegative"),
+                       get("Colors:Button", "ForegroundNegative")),
+        "on_error": first(get("Colors:Selection", "ForegroundNegative"), selection_fg),
+        "error_container": first(get("Colors:Window", "ForegroundNegative"), selection_bg),
+        "on_error_container": first(selection_fg, window_fg),
+        "inverse_surface": first(tooltip_bg, window_fg),
+        "inverse_on_surface": first(window_bg, selection_fg),
+        "inverse_primary": first(selection_bg, window_fg),
+    }
+    return {name: value for name, value in tokens.items() if value}
+
+
+def _parse_repo_tokens(path: str) -> dict:
+    """Read the DoodlebookOS color scheme (semantic comments + sections)."""
+    text = _read_text(path)
+    if not text:
+        return {}
+
+    alias = {
+        "surface": "surface",
+        "surfacecontainer": "surface_container",
+        "surfacecontainerlow": "surface_container_low",
+        "surfacecontainerhigh": "surface_container_high",
+        "surfacecontainerhighest": "surface_container_highest",
+        "surfacedim": "surface_dim",
+        "panelbg": "surface_dim",
+        "pillbuttonbg": "surface_container_low",
+        "pillbuttonicon": "on_surface_variant",
+        "primary": "primary",
+        "accent": "primary",
+        "onprimary": "on_primary",
+        "textprimary": "on_surface",
+        "textsecondary": "on_surface_variant",
+        "floatingmenubg": "surface_container_highest",
+        "surfacevariant": "surface_variant",
+        "outlinevariant": "outline_variant",
+        "outline": "outline",
+    }
+    tokens = {}
+    for raw_name, value in _REPO_TOKEN_RE.findall(text):
+        for part in raw_name.split("/"):
+            key = re.sub(r"[^a-z0-9]", "", part.lower())
+            token = alias.get(key)
+            if token:
+                tokens[token] = value
+                break
+    if not tokens:
+        tokens = _parse_kde_tokens(path)
+    return tokens
+
+
+def palette_candidates() -> list:
+    """(path, parser) ordered from highest to lowest priority."""
+    env_path = os.environ.get("DOODLEBOOK_POPOVER_PALETTE", "")
+    repo = _repo_dir()
+    return [
+        (env_path, _parse_css_tokens),
+        (os.path.expanduser("~/.config/vibepanel/colors.css"), _parse_css_tokens),
+        (os.path.expanduser("~/.config/waybar/colors.css"), _parse_css_tokens),
+        (os.path.expanduser("~/.config/matugen/colors.css"), _parse_css_tokens),
+        (os.path.expanduser("~/.local/share/color-schemes/matugen.colors"),
+         _parse_kde_tokens),
+        (os.path.join(repo, "themes", "color-schemes", "DoodlebookOS_DARK.colors"),
+         _parse_repo_tokens),
+        (os.path.expanduser("~/.local/share/color-schemes/DoodlebookOS_DARK.colors"),
+         _parse_repo_tokens),
+        ("/usr/share/color-schemes/DoodlebookOS_DARK.colors", _parse_repo_tokens),
+    ]
+
+
+def palette_watch_paths() -> list:
+    paths = []
+    for path, _parser in palette_candidates():
+        if not path or not os.path.exists(path):
+            continue
+        directory = os.path.dirname(path)
+        for candidate in (path, directory):
+            if candidate and candidate not in paths:
+                paths.append(candidate)
+    return paths
+
+
+def load_palette() -> tuple:
+    """Merge all available palettes; the highest-priority file wins."""
+    colors = dict(DEFAULT_PALETTE)
+    source = ""
+    for path, parser in reversed(palette_candidates()):
+        if not path or not os.path.isfile(path):
+            continue
+        tokens = parser(path)
+        if tokens:
+            colors.update(tokens)
+            source = path
+    return colors, source
+
+
+def _qcolor(colors: dict, name: str, fallback: str):
+    from PySide6.QtGui import QColor
+
+    value = colors.get(name) or fallback
+    color = QColor(str(value))
+    return color if color.isValid() else QColor(fallback)
+
+
+def apply_palette(app, colors: dict) -> None:
+    """Apply MD3 roles to the Qt palette used by native controls and icons."""
+    from PySide6.QtGui import QPalette
+
+    def color(name: str, fallback: str):
+        return _qcolor(colors, name, fallback)
+
+    palette = QPalette()
+    palette.setColor(QPalette.Window, color("surface_container", "#1d2024"))
+    palette.setColor(QPalette.WindowText, color("on_surface", "#e1e2e9"))
+    palette.setColor(QPalette.Base, color("surface_container_low", "#191c20"))
+    palette.setColor(QPalette.AlternateBase, color("surface_container", "#1d2024"))
+    palette.setColor(QPalette.ToolTipBase, color("surface_container_highest", "#32353a"))
+    palette.setColor(QPalette.ToolTipText, color("on_surface", "#e1e2e9"))
+    palette.setColor(QPalette.Text, color("on_surface", "#e1e2e9"))
+    palette.setColor(QPalette.PlaceholderText, color("on_surface_variant", "#c3c6cf"))
+    palette.setColor(QPalette.Button, color("surface_container_high", "#272a2f"))
+    palette.setColor(QPalette.ButtonText, color("on_surface", "#e1e2e9"))
+    palette.setColor(QPalette.BrightText, color("on_surface", "#e1e2e9"))
+    palette.setColor(QPalette.Highlight, color("primary", "#a4c9fe"))
+    palette.setColor(QPalette.HighlightedText, color("on_primary", "#00315c"))
+    palette.setColor(QPalette.Link, color("primary", "#a4c9fe"))
+    palette.setColor(QPalette.LinkVisited, color("tertiary", "#d9bde3"))
+
+    disabled = color("on_surface_variant", "#c3c6cf")
+    for role in (QPalette.WindowText, QPalette.Text, QPalette.ButtonText):
+        palette.setColor(QPalette.Disabled, role, disabled)
+    palette.setColor(QPalette.Disabled, QPalette.Highlight,
+                     color("surface_container_high", "#272a2f"))
+    palette.setColor(QPalette.Disabled, QPalette.HighlightedText, disabled)
+    app.setPalette(palette)
+
+
+# ---------------------------------------------------------------------------
+# State file (read by the Waybar status modules without loading Qt)
+# ---------------------------------------------------------------------------
+
+def read_state() -> dict:
+    try:
+        with open(STATE_PATH, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+            return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def write_state(unread: int, dnd: bool) -> None:
+    os.makedirs(RUNTIME_DIR, exist_ok=True)
+    payload = json.dumps({"unread": max(0, int(unread)), "dnd": bool(dnd)})
+    fd, tmp = tempfile.mkstemp(prefix=f".{APP_ID}-", dir=RUNTIME_DIR)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(payload)
+        os.replace(tmp, STATE_PATH)
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
+# ---------------------------------------------------------------------------
+# Backlight helper
+# ---------------------------------------------------------------------------
+
+def _backlight_files():
+    devices = sorted(glob.glob("/sys/class/backlight/*/brightness"))
+    for path in devices:
+        max_path = os.path.join(os.path.dirname(path), "max_brightness")
+        try:
+            with open(path, "r", encoding="ascii") as handle:
+                current = int(handle.read().strip())
+            with open(max_path, "r", encoding="ascii") as handle:
+                maximum = int(handle.read().strip())
+            return path, current, maximum
+        except (OSError, ValueError):
+            continue
+    return None, 0, 0
+
+
+# ---------------------------------------------------------------------------
+# DDC/CI brightness (desktop monitors)
+# ---------------------------------------------------------------------------
+
+I2C_RDWR = 0x0707
+I2C_M_RD = 0x0001
+DDC_ADDRESS = 0x37
+
+
+class _I2CMessage(ctypes.Structure):
+    _fields_ = [
+        ("addr", ctypes.c_uint16),
+        ("flags", ctypes.c_uint16),
+        ("length", ctypes.c_uint16),
+        ("buffer", ctypes.POINTER(ctypes.c_uint8)),
+    ]
+
+
+class _I2CRdwrData(ctypes.Structure):
+    _fields_ = [
+        ("messages", ctypes.POINTER(_I2CMessage)),
+        ("count", ctypes.c_uint32),
+    ]
+
+
+def _i2c_transfer(fd: int, payload=None, read_length: int = 0) -> bytes:
+    messages = []
+    buffers = []
+    if payload:
+        buffer = (ctypes.c_uint8 * len(payload))(*payload)
+        buffers.append(buffer)
+        messages.append(_I2CMessage(DDC_ADDRESS, 0, len(payload), buffer))
+    if read_length:
+        buffer = (ctypes.c_uint8 * read_length)()
+        buffers.append(buffer)
+        messages.append(_I2CMessage(DDC_ADDRESS, I2C_M_RD, read_length, buffer))
+    if not messages:
+        return b""
+    array = (_I2CMessage * len(messages))(*messages)
+    data = _I2CRdwrData(array, len(messages))
+    fcntl.ioctl(fd, I2C_RDWR, data)
+    return bytes(buffers[-1]) if read_length else b""
+
+
+def _ddc_checksum(payload) -> int:
+    value = DDC_ADDRESS << 1
+    for byte in payload:
+        value ^= byte
+    return value & 0xff
+
+
+class _DdcDisplay:
+    """Minimal DDC/CI client for VCP 0x10 (luminance/brightness)."""
+
+    def __init__(self, bus: int, fd: int):
+        self.bus = bus
+        self.fd = fd
+        self.available = False
+        self.current = 100
+        self.maximum = 100
+        self.refresh()
+
+    def close(self) -> None:
+        try:
+            os.close(self.fd)
+        except OSError:
+            pass
+
+    def _get_vcp(self, code: int):
+        request = [0x51, 0x82, 0x01, code]
+        request.append(_ddc_checksum(request))
+        _i2c_transfer(self.fd, request)
+        time.sleep(0.05)
+        reply = _i2c_transfer(self.fd, read_length=11)
+        if len(reply) < 11 or reply[0] != 0x6e:
+            return None
+        # reply: address, length, opcode, result, vcp, type, max_hi, max_lo, cur_hi, cur_lo, checksum
+        if reply[2] != 0x02 or reply[3] != 0x00 or reply[4] != code:
+            return None
+        maximum = (reply[6] << 8) | reply[7]
+        current = (reply[8] << 8) | reply[9]
+        return current, maximum
+
+    def refresh(self) -> bool:
+        result = self._get_vcp(0x10)
+        if not result:
+            self.available = False
+            return False
+        current, maximum = result
+        if maximum <= 0:
+            self.available = False
+            return False
+        self.current = current
+        self.maximum = maximum
+        self.available = True
+        return True
+
+    def set_brightness(self, percent: int) -> bool:
+        if not self.available:
+            return False
+        target = int(round(self.maximum * max(0, min(100, int(percent))) / 100))
+        target = max(0, min(self.maximum, target))
+        request = [0x51, 0x84, 0x03, 0x10, (target >> 8) & 0xff, target & 0xff]
+        request.append(_ddc_checksum(request))
+        _i2c_transfer(self.fd, request)
+        time.sleep(0.05)
+        self.current = target
+        return True
+
+
+def _ddc_bus_candidates():
+    connected = set()
+    for path in glob.glob("/sys/class/drm/card*-*"):
+        try:
+            with open(os.path.join(path, "status"), "r", encoding="ascii") as handle:
+                if handle.read().strip() != "connected":
+                    continue
+        except OSError:
+            continue
+        # e.g. card0-DP-1 -> DP-1
+        connected.add(os.path.basename(path).split("-", 1)[1])
+
+    candidates = []
+    for path in glob.glob("/sys/bus/i2c/devices/i2c-*"):
+        try:
+            number = int(os.path.basename(path)[4:])
+        except ValueError:
+            continue
+        try:
+            with open(os.path.join(path, "name"), "r", encoding="utf-8") as handle:
+                name = handle.read().strip()
+        except OSError:
+            name = ""
+        candidates.append((number, name))
+    # Buses named after a connected DRM connector are the best candidates.
+    candidates.sort(key=lambda item: (item[1] not in connected, item[0]))
+    return candidates
+
+
+def _find_ddc_display():
+    for bus, name in _ddc_bus_candidates():
+        if not name or "SMBus" in name or name.startswith("Synopsys"):
+            continue
+        try:
+            fd = os.open(f"/dev/i2c-{bus}", os.O_RDWR)
+        except OSError:
+            continue
+        try:
+            display = _DdcDisplay(bus, fd)
+        except (OSError, ValueError):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+            continue
+        if display.available:
+            return display
+        display.close()
+    return None
+
+
+# ---------------------------------------------------------------------------
+# wlr-gamma-control helper (night light / software brightness)
+# ---------------------------------------------------------------------------
+
+def find_gamma_helper() -> str:
+    candidates = [
+        os.environ.get("DOODLEBOOK_GAMMA_HELPER", ""),
+        os.path.expanduser("~/.local/bin/doodlebook-gamma"),
+        os.path.join(_script_dir(), "gamma", "doodlebook-gamma"),
+        os.path.join(_repo_dir(), "tools", "popover", "gamma", "doodlebook-gamma"),
+        os.path.expanduser("~/.local/lib/doodlebookos/popover/doodlebook-gamma"),
+        "/usr/lib/doodlebookos/doodlebook-gamma",
+        "/usr/bin/doodlebook-gamma",
+    ]
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return ""
+
+
+class _GammaController:
+    """Keeps a gamma-control client alive and feeds it temperature/brightness."""
+
+    def __init__(self):
+        self.path = find_gamma_helper()
+        self._process = None
+        self._lock = threading.Lock()
+        self._temperature = 6500
+        self._brightness = 1.0
+        self._start()
+
+    def _start(self) -> None:
+        if not self.path:
+            return
+        try:
+            self._process = subprocess.Popen(
+                [self.path],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                bufsize=1,
+                start_new_session=True,
+                close_fds=True,
+            )
+        except OSError:
+            self._process = None
+
+    @property
+    def available(self) -> bool:
+        return self._process is not None and self._process.poll() is None
+
+    def apply(self, temperature=None, brightness=None) -> bool:
+        with self._lock:
+            if temperature is not None:
+                self._temperature = max(1000.0, min(10000.0, float(temperature)))
+            if brightness is not None:
+                self._brightness = max(0.01, min(1.0, float(brightness)))
+            if not self.available:
+                return False
+            try:
+                self._process.stdin.write(
+                    f"{self._temperature:.0f} {self._brightness:.4f}\n"
+                )
+                self._process.stdin.flush()
+                return True
+            except (BrokenPipeError, OSError, ValueError):
+                return False
+
+    def stop(self) -> None:
+        with self._lock:
+            process = self._process
+            self._process = None
+            if process is None:
+                return
+            try:
+                process.stdin.close()
+            except OSError:
+                pass
+            try:
+                process.wait(timeout=0.4)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                except OSError:
+                    pass
+                try:
+                    process.wait(timeout=0.5)
+                except subprocess.TimeoutExpired:
+                    pass
+
+
+def _read_power_profile() -> str:
+    try:
+        result = subprocess.run(
+            ["powerprofilesctl", "get"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def _read_tailscale_status() -> dict:
+    """Return `tailscale status --json` as a dict, or {} when unavailable."""
+    try:
+        result = subprocess.run(
+            ["tailscale", "status", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if result.returncode != 0:
+        return {}
+    try:
+        data = json.loads(result.stdout or "{}")
+    except (ValueError, TypeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+# ---------------------------------------------------------------------------
+# IPC client (standard library only, so button clicks stay fast)
+# ---------------------------------------------------------------------------
+
+def _connect():
+    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    client.settimeout(1.5)
+    client.connect(SOCKET_PATH)
+    return client
+
+
+def spawn_daemon() -> None:
+    subprocess.Popen(
+        [sys.executable, os.path.realpath(__file__), "daemon"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+        close_fds=True,
+        env=os.environ.copy(),
+    )
+
+
+def send_command(command: str, autostart: bool = True) -> str:
+    for attempt in range(2):
+        try:
+            client = _connect()
+            with client:
+                client.sendall((command + "\n").encode("utf-8"))
+                try:
+                    client.shutdown(socket.SHUT_WR)
+                except OSError:
+                    pass
+                chunks = []
+                while True:
+                    chunk = client.recv(4096)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+            return b"".join(chunks).decode("utf-8", "replace").strip()
+        except (FileNotFoundError, ConnectionRefusedError, socket.timeout, OSError):
+            if attempt == 0 and autostart and os.path.exists(os.path.realpath(__file__)):
+                spawn_daemon()
+                # Give the daemon enough time to create the socket *only* on
+                # the very first launch. Afterwards this branch is never hit.
+                import time
+
+                deadline = time.monotonic() + 2.0
+                while time.monotonic() < deadline:
+                    if os.path.exists(SOCKET_PATH):
+                        break
+                    time.sleep(0.02)
+                continue
+            return ""
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Daemon
+# ---------------------------------------------------------------------------
+
+def run_daemon() -> int:
+    try:
+        from PySide6.QtCore import (
+            QFileSystemWatcher,
+            QObject,
+            Property,
+            QTimer,
+            QUrl,
+            Signal,
+            Slot,
+        )
+        from PySide6.QtGui import QGuiApplication
+        from PySide6.QtNetwork import QLocalServer
+        from PySide6.QtQml import QQmlApplicationEngine
+    except ImportError as exc:  # pragma: no cover
+        print(f"[{APP_ID}] PySide6 is required for the daemon: {exc}", file=sys.stderr)
+        return 1
+
+    # Single-instance lock: a burst of CLI clicks (or a manual start racing the
+    # auto-start) must never create two daemons with two sets of layer surfaces.
+    import fcntl
+
+    os.makedirs(RUNTIME_DIR, exist_ok=True)
+    lock_path = os.path.join(RUNTIME_DIR, f"{APP_ID}.lock")
+    lock_handle = open(lock_path, "w", encoding="utf-8")
+    try:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        print(f"[{APP_ID}] daemon already running", file=sys.stderr)
+        lock_handle.close()
+        return 0
+
+    if os.path.exists(SOCKET_PATH):
+        try:
+            probe = _connect()
+            probe.close()
+            print(f"[{APP_ID}] daemon already running", file=sys.stderr)
+            return 0
+        except OSError:
+            try:
+                os.unlink(SOCKET_PATH)
+            except OSError:
+                pass
+
+    app = QGuiApplication(sys.argv[:1])
+    app.setApplicationName(APP_ID)
+    app.setApplicationDisplayName("DoodlebookOS Popovers")
+    app.setOrganizationName("DoodlebookOS")
+    app.setOrganizationDomain("doodlebookos.local")
+    app.setQuitOnLastWindowClosed(False)
+
+    class PopoverState(QObject):
+        quicksettingsVisibleChanged = Signal()
+        notificationsVisibleChanged = Signal()
+        unreadCountChanged = Signal()
+        dndActiveChanged = Signal()
+
+        def __init__(self):
+            super().__init__()
+            self._quicksettings = False
+            self._notifications = False
+            self._unread = 0
+            self._dnd = False
+
+        def _get_quicksettings(self) -> bool:
+            return self._quicksettings
+
+        def _set_quicksettings(self, value: bool) -> None:
+            value = bool(value)
+            if value == self._quicksettings:
+                return
+            self._quicksettings = value
+            self.quicksettingsVisibleChanged.emit()
+
+        def _get_notifications(self) -> bool:
+            return self._notifications
+
+        def _set_notifications(self, value: bool) -> None:
+            value = bool(value)
+            if value == self._notifications:
+                return
+            self._notifications = value
+            self.notificationsVisibleChanged.emit()
+
+        def _get_unread(self) -> int:
+            return self._unread
+
+        def _set_unread(self, value: int) -> None:
+            value = max(0, min(999, int(value)))
+            if value == self._unread:
+                return
+            self._unread = value
+            self.unreadCountChanged.emit()
+            write_state(self._unread, self._dnd)
+
+        def _get_dnd(self) -> bool:
+            return self._dnd
+
+        def _set_dnd(self, value: bool) -> None:
+            value = bool(value)
+            if value == self._dnd:
+                return
+            self._dnd = value
+            self.dndActiveChanged.emit()
+            write_state(self._unread, self._dnd)
+
+        quicksettingsVisible = Property(bool, _get_quicksettings, _set_quicksettings,
+                                        notify=quicksettingsVisibleChanged)
+        notificationsVisible = Property(bool, _get_notifications, _set_notifications,
+                                        notify=notificationsVisibleChanged)
+        unreadCount = Property(int, _get_unread, _set_unread, notify=unreadCountChanged)
+        dndActive = Property(bool, _get_dnd, _set_dnd, notify=dndActiveChanged)
+
+        # Quick Settings and the Notification Center are separate drawers, but
+        # only one may be open at a time.
+        @Slot()
+        def toggleQuicksettings(self):
+            if self._quicksettings:
+                self._set_quicksettings(False)
+            else:
+                self._set_notifications(False)
+                self._set_quicksettings(True)
+
+        @Slot()
+        def toggleNotifications(self):
+            if self._notifications:
+                self._set_notifications(False)
+            else:
+                self._set_quicksettings(False)
+                self._set_notifications(True)
+
+        @Slot()
+        def showQuicksettings(self):
+            self._set_notifications(False)
+            self._set_quicksettings(True)
+
+        @Slot()
+        def showNotifications(self):
+            self._set_quicksettings(False)
+            self._set_notifications(True)
+
+        @Slot()
+        def hideQuicksettings(self):
+            self._set_quicksettings(False)
+
+        @Slot()
+        def hideNotifications(self):
+            self._set_notifications(False)
+
+        @Slot()
+        def hideAll(self):
+            self._set_quicksettings(False)
+            self._set_notifications(False)
+
+    class Backend(QObject):
+        brightnessChanged = Signal()
+        nightLightChanged = Signal()
+        powerProfileChanged = Signal()
+        caffeineChanged = Signal()
+        tailscaleChanged = Signal()
+
+        def __init__(self, state):
+            super().__init__()
+            self._state = state
+            self._gamma = _GammaController()
+            self._ddc = None
+            self._backlight_path = None
+            self._backlight_max = 0
+            self._brightness_mode = "none"
+            self._brightness = 100
+            self._brightness_target = 100
+            self._brightness_event = threading.Event()
+            self._brightness_stop = threading.Event()
+            self._brightness_thread = None
+            self._night_light = False
+            self._power_profile = _read_power_profile()
+            self._caffeine_process = None
+            self._tailscale_active = False
+            self._tailscale_state = ""
+            self._init_brightness()
+            self.refreshTailscale()
+
+        @Slot(str)
+        def exec(self, command: str) -> None:
+            if not command:
+                return
+            try:
+                subprocess.Popen(
+                    ["/bin/sh", "-c", command],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                    close_fds=True,
+                )
+            except OSError as exc:
+                print(f"[{APP_ID}] exec failed: {exc}", file=sys.stderr)
+
+        # -- brightness ----------------------------------------------------
+        def _init_brightness(self) -> None:
+            # Desktop monitors: DDC/CI over the GPU's i2c bus.
+            self._ddc = _find_ddc_display()
+            if self._ddc is not None:
+                self._brightness_mode = "ddc"
+                self._brightness = int(round(
+                    self._ddc.current * 100 / max(1, self._ddc.maximum)
+                ))
+                self._brightness_target = self._brightness
+                self._brightness_thread = threading.Thread(
+                    target=self._ddc_worker, daemon=True
+                )
+                self._brightness_thread.start()
+                return
+
+            # Laptops / devices with a kernel backlight.
+            path, current, maximum = _backlight_files()
+            if path and maximum > 0:
+                self._backlight_path = path
+                self._backlight_max = maximum
+                self._brightness = int(round(current * 100 / maximum))
+                self._brightness_mode = "backlight"
+                return
+
+            # Last resort: dim/warm through wlr-gamma-control.
+            if self._gamma.available:
+                self._brightness_mode = "gamma"
+                self._brightness = 100
+                self._gamma.apply(brightness=1.0)
+
+        def _ddc_worker(self) -> None:
+            last_applied = None
+            while not self._brightness_stop.is_set():
+                if not self._brightness_event.wait(0.5):
+                    continue
+                self._brightness_event.clear()
+                # Debounce the whole drag into a single DDC/CI write. Sending
+                # one write per pointer event makes the monitor backlight
+                # visibly flicker; the slider itself still updates smoothly.
+                quiet = False
+                while not self._brightness_stop.is_set():
+                    if self._brightness_event.wait(0.12):
+                        self._brightness_event.clear()
+                    else:
+                        quiet = True
+                        break
+                if not quiet or self._brightness_stop.is_set():
+                    continue
+                target = self._brightness_target
+                if target == last_applied:
+                    continue
+                try:
+                    if self._ddc is not None:
+                        self._ddc.set_brightness(target)
+                        last_applied = target
+                except (OSError, ValueError):
+                    return
+
+        def _get_brightness_available(self) -> bool:
+            if self._brightness_mode == "ddc":
+                return self._ddc is not None
+            if self._brightness_mode == "backlight":
+                return bool(self._backlight_path and self._backlight_max > 0)
+            if self._brightness_mode == "gamma":
+                return self._gamma.available
+            return False
+
+        def _get_brightness(self) -> int:
+            return int(self._brightness)
+
+        @Slot(int)
+        def setBrightness(self, value: int) -> None:
+            value = max(1, min(100, int(value)))
+            self._brightness = value
+            if self._brightness_mode == "ddc" and self._ddc is not None:
+                self._brightness_target = value
+                self._brightness_event.set()
+            elif self._brightness_mode == "backlight" and self._backlight_path:
+                target = max(
+                    1,
+                    min(
+                        self._backlight_max,
+                        int(round(self._backlight_max * value / 100)),
+                    ),
+                )
+                try:
+                    with open(self._backlight_path, "w", encoding="ascii") as handle:
+                        handle.write(str(target))
+                except OSError:
+                    pass
+            elif self._brightness_mode == "gamma":
+                self._gamma.apply(brightness=value / 100)
+            self.brightnessChanged.emit()
+
+        # -- night light ---------------------------------------------------
+        def _get_night_light_available(self) -> bool:
+            return self._gamma.available
+
+        def _get_night_light_active(self) -> bool:
+            return bool(self._night_light and self._gamma.available)
+
+        @Slot(bool)
+        def setNightLight(self, enabled: bool) -> None:
+            enabled = bool(enabled)
+            brightness = 1.0 if self._brightness_mode != "gamma" else self._brightness / 100
+            if not self._gamma.apply(temperature=3500 if enabled else 6500,
+                                     brightness=brightness):
+                self.nightLightChanged.emit()
+                return
+            if enabled != self._night_light:
+                self._night_light = enabled
+                self.nightLightChanged.emit()
+
+        @Slot()
+        def toggleNightLight(self) -> None:
+            self.setNightLight(not self._night_light)
+
+        # -- power profiles ------------------------------------------------
+        def _get_power_profile(self) -> str:
+            return self._power_profile
+
+        @Slot()
+        def refreshPowerProfile(self) -> None:
+            profile = _read_power_profile()
+            if profile and profile != self._power_profile:
+                self._power_profile = profile
+                self.powerProfileChanged.emit()
+
+        @Slot()
+        def cyclePowerProfile(self) -> None:
+            order = {
+                "balanced": "performance",
+                "performance": "power-saver",
+                "power-saver": "balanced",
+            }
+            current = _read_power_profile() or self._power_profile
+            target = order.get(current, "balanced")
+            try:
+                result = subprocess.run(
+                    ["powerprofilesctl", "set", target],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=3,
+                )
+            except (OSError, subprocess.SubprocessError):
+                return
+            if result.returncode == 0:
+                self._power_profile = target
+            else:
+                self._power_profile = _read_power_profile()
+            self.powerProfileChanged.emit()
+
+        # -- tailscale -----------------------------------------------------
+        def _get_tailscale_active(self) -> bool:
+            return self._tailscale_active
+
+        def _get_tailscale_state(self) -> str:
+            return self._tailscale_state
+
+        @Slot()
+        def refreshTailscale(self) -> None:
+            data = _read_tailscale_status()
+            state = str(data.get("BackendState") or "").strip()
+            active = state == "Running"
+            if state != self._tailscale_state or active != self._tailscale_active:
+                self._tailscale_state = state
+                self._tailscale_active = active
+                self.tailscaleChanged.emit()
+
+        @Slot()
+        def toggleTailscale(self) -> None:
+            argv = ["tailscale", "down" if self._tailscale_active else "up"]
+            if argv[-1] == "up":
+                # Never block the popover while Tailscale waits for a login.
+                argv.append("--timeout=5s")
+            try:
+                result = subprocess.run(
+                    argv,
+                    capture_output=True,
+                    text=True,
+                    timeout=8,
+                )
+            except (OSError, subprocess.SubprocessError):
+                result = None
+            if result is not None and result.returncode != 0:
+                # tailscaled only lets the configured operator or root change
+                # the connection state. Fall back to a polkit prompt so the
+                # tile still works before `tailscale set --operator` is used.
+                pkexec = shutil.which("pkexec")
+                if pkexec:
+                    try:
+                        subprocess.run(
+                            [pkexec, *argv],
+                            capture_output=True,
+                            text=True,
+                            timeout=30,
+                        )
+                    except (OSError, subprocess.SubprocessError):
+                        pass
+            self.refreshTailscale()
+            # `up` may finish asynchronously (login / reauth).
+            QTimer.singleShot(1500, self.refreshTailscale)
+            QTimer.singleShot(5000, self.refreshTailscale)
+
+        # -- caffeine ------------------------------------------------------
+        def _get_caffeine_active(self) -> bool:
+            process = self._caffeine_process
+            if process is None:
+                return False
+            if process.poll() is None:
+                return True
+            self._caffeine_process = None
+            return False
+
+        def _stop_caffeine(self) -> None:
+            process = self._caffeine_process
+            self._caffeine_process = None
+            if process is None:
+                return
+            try:
+                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+            except OSError:
+                try:
+                    process.terminate()
+                except OSError:
+                    pass
+            try:
+                process.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                except OSError:
+                    pass
+
+        @Slot()
+        def toggleCaffeine(self) -> None:
+            if self._get_caffeine_active():
+                self._stop_caffeine()
+                self.caffeineChanged.emit()
+                return
+            try:
+                self._caffeine_process = subprocess.Popen(
+                    [
+                        "systemd-inhibit",
+                        "--what=idle:sleep",
+                        "--who=DoodlebookOS",
+                        "--why=Caffeine tile",
+                        "--mode=block",
+                        "sleep",
+                        "infinity",
+                    ],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                    close_fds=True,
+                )
+                self.caffeineChanged.emit()
+            except OSError as exc:
+                print(f"[{APP_ID}] caffeine failed: {exc}", file=sys.stderr)
+
+        @Slot()
+        def shutdown(self) -> None:
+            self._brightness_stop.set()
+            self._brightness_event.set()
+            if self._ddc is not None:
+                self._ddc.close()
+                self._ddc = None
+            self._stop_caffeine()
+            self._gamma.stop()
+
+        brightnessAvailable = Property(bool, _get_brightness_available,
+                                        notify=brightnessChanged)
+        brightness = Property(int, _get_brightness, notify=brightnessChanged)
+        nightLightAvailable = Property(bool, _get_night_light_available,
+                                       notify=nightLightChanged)
+        nightLightActive = Property(bool, _get_night_light_active,
+                                    notify=nightLightChanged)
+        powerProfile = Property(str, _get_power_profile,
+                                notify=powerProfileChanged)
+        caffeineActive = Property(bool, _get_caffeine_active,
+                                  notify=caffeineChanged)
+        tailscaleActive = Property(bool, _get_tailscale_active,
+                                   notify=tailscaleChanged)
+        tailscaleState = Property(str, _get_tailscale_state,
+                                  notify=tailscaleChanged)
+
+    class PaletteProvider(QObject):
+        changed = Signal()
+
+        def __init__(self, application):
+            super().__init__()
+            self._app = application
+            self._colors = {}
+            self._source = ""
+            self.reload()
+
+        def _get_colors(self) -> dict:
+            return self._colors
+
+        def _get_source(self) -> str:
+            return self._source
+
+        colors = Property("QVariantMap", _get_colors, notify=changed)
+        source = Property(str, _get_source, notify=changed)
+
+        @Slot()
+        def reload(self) -> None:
+            colors, source = load_palette()
+            apply_palette(self._app, colors)
+            if colors == self._colors and source == self._source:
+                return
+            self._colors = colors
+            self._source = source
+            self.changed.emit()
+
+    state = PopoverState()
+    backend = Backend(state)
+    app.aboutToQuit.connect(backend.shutdown)
+
+    def _handle_termination(_signum, _frame):
+        backend.shutdown()
+        QTimer.singleShot(0, app.quit)
+
+    signal.signal(signal.SIGTERM, _handle_termination)
+    signal.signal(signal.SIGINT, _handle_termination)
+    palette = PaletteProvider(app)
+
+    # Matugen rewrites colors.css when the wallpaper changes. Watch both the
+    # files and their directories (atomic replace drops the file watch).
+    palette_watcher = QFileSystemWatcher(app)
+    watched = palette_watch_paths()
+    if watched:
+        palette_watcher.addPaths(watched)
+
+    palette_reload_timer = QTimer(app)
+    palette_reload_timer.setSingleShot(True)
+    palette_reload_timer.setInterval(120)
+    palette_reload_timer.timeout.connect(palette.reload)
+
+    def on_palette_fs_changed(_path: str) -> None:
+        palette_reload_timer.start()
+        existing = set(palette_watcher.files()) | set(palette_watcher.directories())
+        for candidate in palette_watch_paths():
+            if candidate not in existing:
+                palette_watcher.addPath(candidate)
+
+    palette_watcher.fileChanged.connect(on_palette_fs_changed)
+    palette_watcher.directoryChanged.connect(on_palette_fs_changed)
+
+    engine = QQmlApplicationEngine()
+    imports_dir = find_imports_dir()
+    if imports_dir:
+        engine.addImportPath(imports_dir)
+    engine.rootContext().setContextProperty("PopoverState", state)
+    engine.rootContext().setContextProperty("Backend", backend)
+    engine.rootContext().setContextProperty("Md3Palette", palette)
+
+    def on_warnings(warnings) -> None:
+        for warning in warnings:
+            print(f"[{APP_ID}] QML: {warning.toString()}", file=sys.stderr)
+
+    engine.warnings.connect(on_warnings)
+
+    try:
+        qml_dir = find_standalone_qml_dir()
+    except FileNotFoundError as exc:
+        print(f"[{APP_ID}] {exc}", file=sys.stderr)
+        return 1
+
+    # Backdrop first so it sits underneath the drawers.
+    for name in ("PopoverBackdrop.qml", "QuickSettingsPopover.qml",
+                 "NotificationCenterPopover.qml"):
+        engine.load(QUrl.fromLocalFile(os.path.join(qml_dir, name)))
+
+    if not engine.rootObjects():
+        print(f"[{APP_ID}] failed to create popover windows", file=sys.stderr)
+        return 1
+
+    write_state(0, False)
+
+    server = QLocalServer()
+    QLocalServer.removeServer(SOCKET_PATH)
+
+    def handle(command: str) -> str:
+        tokens = command.strip().lower().split()
+        if not tokens:
+            return ""
+        action = tokens[0]
+        target = tokens[1] if len(tokens) > 1 else ""
+
+        # Pick up palette changes even if the file watcher is unavailable.
+        if action in ("toggle", "show"):
+            palette.reload()
+            backend.refreshPowerProfile()
+            backend.refreshTailscale()
+
+        if action == "ping":
+            return "ok"
+        if action == "status":
+            return json.dumps({
+                "unread": state.unreadCount,
+                "dnd": state.dndActive,
+                "qsVisible": state.quicksettingsVisible,
+                "nsVisible": state.notificationsVisible,
+                "brightness": backend.brightness,
+                "brightnessAvailable": backend.brightnessAvailable,
+                "nightLightAvailable": backend.nightLightAvailable,
+                "nightLightActive": backend.nightLightActive,
+                "powerProfile": backend.powerProfile,
+                "caffeineActive": backend.caffeineActive,
+                "tailscaleActive": backend.tailscaleActive,
+                "tailscaleState": backend.tailscaleState,
+            })
+        if action == "brightness" and target:
+            try:
+                backend.setBrightness(int(target))
+            except ValueError:
+                return "bad-value"
+            return "ok"
+        if action == "nightlight":
+            if target == "on":
+                backend.setNightLight(True)
+            elif target == "off":
+                backend.setNightLight(False)
+            else:
+                backend.toggleNightLight()
+            return "ok"
+        if action == "powerprofile":
+            backend.cyclePowerProfile()
+            return "ok"
+        if action == "caffeine":
+            backend.toggleCaffeine()
+            return "ok"
+        if action == "tailscale":
+            backend.toggleTailscale()
+            return "ok"
+        if action == "hide" or action == "hideall":
+            state.hideAll()
+            return "ok"
+        if action == "quit":
+            QTimer.singleShot(50, app.quit)
+            return "ok"
+
+        if action in ("toggle", "show", "hide"):
+            if target in ("quicksettings", "quick-settings", "qs"):
+                if action == "toggle":
+                    state.toggleQuicksettings()
+                elif action == "show":
+                    state.showQuicksettings()
+                else:
+                    state.hideQuicksettings()
+                return "ok"
+            if target in ("notifications", "notification", "nc"):
+                if action == "toggle":
+                    state.toggleNotifications()
+                elif action == "show":
+                    state.showNotifications()
+                else:
+                    state.hideNotifications()
+                return "ok"
+
+        return "unknown"
+
+    def on_new_connection() -> None:
+        connection = server.nextPendingConnection()
+        if connection is None:
+            return
+        try:
+            if connection.waitForReadyRead(500):
+                payload = bytes(connection.readAll()).decode("utf-8", "replace").strip()
+                reply = handle(payload)
+                connection.write((reply + "\n").encode("utf-8"))
+                connection.flush()
+                connection.waitForBytesWritten(500)
+        finally:
+            connection.disconnectFromServer()
+            connection.deleteLater()
+
+    server.newConnection.connect(on_new_connection)
+    if not server.listen(SOCKET_PATH):
+        print(f"[{APP_ID}] cannot listen on {SOCKET_PATH}: {server.errorString()}",
+              file=sys.stderr)
+        return 1
+
+    print(f"[{APP_ID}] ready on {SOCKET_PATH}", file=sys.stderr)
+    return app.exec()
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def waybar_status(target: str) -> int:
+    state = read_state()
+    unread = int(state.get("unread", 0) or 0)
+    dnd = bool(state.get("dnd", False))
+
+    if target in ("notifications", "notification", "nc"):
+        if unread > 0:
+            text = str(unread) if unread < 100 else "99+"
+            alt = "notification"
+            tooltip = f"{unread} unread notification" + ("" if unread == 1 else "s")
+        elif dnd:
+            text = ""
+            alt = "dnd-none"
+            tooltip = "Do Not Disturb"
+        else:
+            text = ""
+            alt = "none"
+            tooltip = "No notifications"
+        print(json.dumps({"text": text, "alt": alt, "tooltip": tooltip, "class": alt}))
+        return 0
+
+    if target in ("quicksettings", "quick-settings", "qs"):
+        print(json.dumps({"text": "", "alt": "none", "tooltip": "Quick Settings",
+                          "class": "none"}))
+        return 0
+
+    print(json.dumps(state))
+    return 0
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    if not args or args[0] in ("daemon", "run"):
+        return run_daemon()
+
+    command = args[0].lower()
+
+    if command == "status":
+        return waybar_status(args[1].lower() if len(args) > 1 else "all")
+
+    if command in ("toggle", "show", "hide"):
+        target = args[1].lower() if len(args) > 1 else ""
+        send_command(f"{command} {target}".strip())
+        return 0
+
+    if command == "hideall":
+        send_command("hide")
+        return 0
+
+    if command == "quit":
+        send_command("quit", autostart=False)
+        return 0
+
+    if command in ("ping", "version"):
+        if command == "version":
+            print("0.1.0")
+            return 0
+        print(send_command("ping", autostart=False) or "not-running")
+        return 0
+
+    print(__doc__)
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

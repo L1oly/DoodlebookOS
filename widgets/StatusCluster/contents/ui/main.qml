@@ -529,6 +529,8 @@ PlasmoidItem {
     }
 
     function requestTogglePopup(name) {
+        // Quick Settings and the Notification Center never open at the same
+        // time: opening one closes the other (via the popupSwitchTimer).
         popupSwitchTimer.stop();
 
         var isTargetOpen = false;

@@ -21,7 +21,19 @@ PlasmaExtras.Representation {
 
     function i18n(k, a1, a2) { return I18n.t(k, a1, a2); }
 
+    function runCommand(command) {
+        if (hasDaemonBackend) {
+            Backend.exec(command);
+        } else {
+            executable.exec(command);
+        }
+    }
+
     property var appletRoot: null
+    // Optional configuration backend. When this panel is hosted by the
+    // standalone popover (tools/popover) there is no Plasmoid.configuration,
+    // so the popover supplies a Qt.labs.settings object instead.
+    property var settings: null
     property bool powerMenuOpen: false
     property bool manualNightLightActive: false
     property bool isEditingTiles: false
@@ -38,10 +50,21 @@ PlasmaExtras.Representation {
         return lum < 0.5;
     }
 
-    readonly property var defaultTiles: ["wifi", "bluetooth", "dark_mode", "battery_saver", "modes", "mic", "screenshot", "quickshare"]
-    property var activeTiles: ["wifi", "bluetooth", "dark_mode", "battery_saver", "modes", "mic", "screenshot", "quickshare"]
+    // Optional resident backend supplied by the standalone popover daemon.
+    // The Plasma applet has no such context property and keeps using its
+    // Plasma/PowerDevil paths.
+    readonly property bool hasDaemonBackend: typeof Backend !== "undefined" && Backend !== null
+    readonly property bool daemonNightLightAvailable: hasDaemonBackend && Backend.nightLightAvailable
+    readonly property bool daemonNightLightActive: hasDaemonBackend && Backend.nightLightActive
+    readonly property string daemonPowerProfile: hasDaemonBackend ? (Backend.powerProfile || "") : ""
+    readonly property bool daemonCaffeineActive: hasDaemonBackend && Backend.caffeineActive
+    readonly property bool daemonTailscaleActive: hasDaemonBackend && Backend.tailscaleActive
+    readonly property string daemonTailscaleState: hasDaemonBackend ? (Backend.tailscaleState || "") : ""
+
+    readonly property var defaultTiles: ["wifi", "bluetooth", "dark_mode", "battery_saver", "modes", "mic", "screenshot", "quickshare", "localshare", "powerprofiles", "caffeine", "tailscale"]
+    property var activeTiles: ["wifi", "bluetooth", "dark_mode", "battery_saver", "modes", "mic", "screenshot", "quickshare", "localshare", "powerprofiles", "caffeine", "tailscale"]
     property var tileSpans: ({})
-    readonly property var allSupportedTiles: ["wifi", "bluetooth", "dark_mode", "battery_saver", "modes", "mic", "screenshot", "quickshare", "keyboard"]
+    readonly property var allSupportedTiles: ["wifi", "bluetooth", "dark_mode", "battery_saver", "modes", "mic", "screenshot", "quickshare", "keyboard", "localshare", "powerprofiles", "caffeine", "tailscale"]
 
     function getTileSpan(id) {
         if (tileSpans && tileSpans[id] !== undefined) {
@@ -60,8 +83,40 @@ PlasmaExtras.Representation {
     readonly property bool isBtOn: (typeof BluezQt !== "undefined" && BluezQt.Manager &&
         (BluezQt.Manager.usableAdapter ? BluezQt.Manager.usableAdapter.powered : (BluezQt.Manager.bluetoothOperational && !BluezQt.Manager.bluetoothBlocked)))
 
+    readonly property var configBackend: {
+        if (settings) {
+            return settings;
+        }
+        if (typeof Plasmoid !== "undefined" && Plasmoid && Plasmoid.configuration) {
+            return Plasmoid.configuration;
+        }
+        return null;
+    }
+
+    // Volume slider range: 100% (normal) or 150% (allow amplification).
+    // Standalone popover: read from [doodlebookos-quicksettings] volumeMax
+    // in ~/.config/DoodlebookOS/doodlebook-popover.conf.
+    readonly property int volumeMax: {
+        var cfg = configBackend;
+        if (cfg && cfg.volumeMax !== undefined && cfg.volumeMax !== null) {
+            return Number(cfg.volumeMax) >= 150 ? 150 : 100;
+        }
+        return 100;
+    }
+
+    // Whether utility/virtual playback streams (soundboard feeders, internal
+    // PipeWire nodes without an application name) are listed in App volume.
+    // Standalone popover: [doodlebookos-quicksettings] showVirtualStreams.
+    readonly property bool showVirtualStreams: {
+        var cfg = configBackend;
+        if (cfg && cfg.showVirtualStreams !== undefined && cfg.showVirtualStreams !== null) {
+            return Boolean(cfg.showVirtualStreams);
+        }
+        return false;
+    }
+
     function loadActiveTiles() {
-        var cfg = (Plasmoid && Plasmoid.configuration) ? Plasmoid.configuration.activeTiles : "";
+        var cfg = configBackend ? configBackend.activeTiles : "";
         var spans = {};
         if (cfg && typeof cfg === "string" && cfg.trim().length > 0) {
             var list = cfg.split(",");
@@ -81,6 +136,32 @@ PlasmaExtras.Representation {
             if (clean.length > 0) {
                 tileSpans = spans;
                 activeTiles = clean;
+                // One-time migration for layouts saved before new tiles
+                // existed. Bumping the version keeps the tiles removable
+                // afterwards.
+                if (configBackend
+                        && typeof configBackend.tileCatalogVersion !== "undefined"
+                        && Number(configBackend.tileCatalogVersion) < 3) {
+                    var catalogVersion = Number(configBackend.tileCatalogVersion);
+                    var additions = [];
+                    if (catalogVersion < 2) {
+                        additions = ["localshare", "powerprofiles", "caffeine"];
+                    }
+                    if (catalogVersion < 3) {
+                        additions.push("tailscale");
+                    }
+                    var merged = clean.slice();
+                    for (var a = 0; a < additions.length; a++) {
+                        if (merged.indexOf(additions[a]) === -1) {
+                            merged.push(additions[a]);
+                            spans[additions[a]] = 2;
+                        }
+                    }
+                    tileSpans = spans;
+                    activeTiles = merged;
+                    configBackend.tileCatalogVersion = 3;
+                    saveActiveTiles();
+                }
                 return;
             }
         }
@@ -89,14 +170,14 @@ PlasmaExtras.Representation {
     }
 
     function saveActiveTiles() {
-        if (Plasmoid && Plasmoid.configuration) {
+        if (configBackend) {
             var formatted = [];
             for (var i = 0; i < activeTiles.length; i++) {
                 var id = activeTiles[i];
                 var s = getTileSpan(id);
                 formatted.push(id + ":" + s);
             }
-            Plasmoid.configuration.activeTiles = formatted.join(",");
+            configBackend.activeTiles = formatted.join(",");
         }
     }
 
@@ -176,7 +257,31 @@ PlasmaExtras.Representation {
             case "screenshot": return i18n("Screenshot");
             case "quickshare": return i18n("Quick Share");
             case "keyboard": return i18n("Keyboard");
+            case "localshare": return i18n("LocalShare");
+            case "powerprofiles": return i18n("Power profile");
+            case "caffeine": return i18n("Caffeine");
+            case "tailscale": return i18n("Tailscale");
             default: return id;
+        }
+    }
+
+    function tailscaleLabel(state) {
+        switch (state) {
+            case "Running": return i18n("Connected");
+            case "NeedsLogin": return i18n("Needs login");
+            case "NeedsMachineAuth": return i18n("Needs approval");
+            case "Starting": return i18n("Starting…");
+            case "Stopped": return i18n("Stopped");
+            default: return i18n("Unavailable");
+        }
+    }
+
+    function powerProfileLabel(profile) {
+        switch (profile) {
+            case "performance": return i18n("Performance");
+            case "balanced": return i18n("Balanced");
+            case "power-saver": return i18n("Power saver");
+            default: return i18n("Unavailable");
         }
     }
 
@@ -193,6 +298,13 @@ PlasmaExtras.Representation {
             case "screenshot": return i18n("Area capture");
             case "quickshare": return i18n("KDE Connect");
             case "keyboard": return i18n("Virtual keyboard");
+            case "localshare": return i18n("LocalSend");
+            case "powerprofiles": return powerProfileLabel(fullRep.daemonPowerProfile);
+            case "caffeine": return fullRep.daemonCaffeineActive ? i18n("On") : i18n("Off");
+            case "tailscale":
+                return fullRep.hasDaemonBackend
+                    ? tailscaleLabel(fullRep.daemonTailscaleState)
+                    : i18n("VPN");
             default: return "";
         }
     }
@@ -208,6 +320,12 @@ PlasmaExtras.Representation {
             case "screenshot": return Qt.resolvedUrl("icons/screenshot.svg");
             case "quickshare": return Qt.resolvedUrl("icons/quickshare.svg");
             case "keyboard": return Qt.resolvedUrl("icons/keyboard.svg");
+            case "localshare": return Qt.resolvedUrl("icons/localshare.svg");
+            case "powerprofiles": return fullRep.daemonPowerProfile === "power-saver"
+                ? Qt.resolvedUrl("icons/battery_saver.svg")
+                : Qt.resolvedUrl("icons/power_profiles.svg");
+            case "caffeine": return Qt.resolvedUrl("icons/caffeine.svg");
+            case "tailscale": return Qt.resolvedUrl("icons/tailscale.svg");
             default: return Qt.resolvedUrl("icons/settings.svg");
         }
     }
@@ -227,6 +345,11 @@ PlasmaExtras.Representation {
             case "screenshot": return false;
             case "quickshare": return false;
             case "keyboard": return false;
+            case "localshare": return false;
+            case "powerprofiles": return fullRep.daemonPowerProfile === "performance"
+                || fullRep.daemonPowerProfile === "power-saver";
+            case "caffeine": return fullRep.daemonCaffeineActive;
+            case "tailscale": return fullRep.daemonTailscaleActive;
             default: return false;
         }
     }
@@ -269,6 +392,30 @@ PlasmaExtras.Representation {
             case "keyboard":
                 executable.exec("$(command -v qdbus-qt6 || command -v qdbus6 || command -v qdbus) org.kde.KWin /KWin org.kde.KWin.showVirtualKeyboard");
                 break;
+            case "localshare":
+                fullRep.runCommand("localsend");
+                break;
+            case "powerprofiles":
+                if (fullRep.hasDaemonBackend) {
+                    Backend.cyclePowerProfile();
+                } else {
+                    executable.exec("powerprofilesctl cycle");
+                }
+                break;
+            case "caffeine":
+                if (fullRep.hasDaemonBackend) {
+                    Backend.toggleCaffeine();
+                } else {
+                    executable.exec("systemd-inhibit --what=idle:sleep --who=DoodlebookOS --why='Caffeine tile' --mode=block sleep infinity");
+                }
+                break;
+            case "tailscale":
+                if (fullRep.hasDaemonBackend) {
+                    Backend.toggleTailscale();
+                } else {
+                    executable.exec("tailscale up");
+                }
+                break;
             default:
                 break;
         }
@@ -291,6 +438,8 @@ PlasmaExtras.Representation {
 
     Component.onCompleted: {
         loadActiveTiles();
+        refreshVolumeStreams();
+        refreshAudioDevices();
     }
 
     Sessions.SessionManagement {
@@ -363,18 +512,27 @@ PlasmaExtras.Representation {
         target: fullRep.Window ? fullRep.Window.window : null
         function onVisibleChanged() {
             var win = fullRep.Window ? fullRep.Window.window : null;
-            if (win && win.visible) {
-                Qt.callLater(() => {
-                    if (!win || !win.visible || !win.screen) return;
-                    var screenW = win.screen.geometry.width;
-                    var screenX = win.screen.geometry.x;
-                    var rightEdge = screenX + screenW;
-                    var offset = 8;
-                    if ((win.x + win.width) > (rightEdge - offset)) {
-                        win.x = rightEdge - win.width - offset;
-                    }
-                });
-            }
+            if (!win || !win.visible) return;
+            // Only the Plasma applet popup needs edge-clamping. The standalone
+            // popover host has no popupAnchorItem and is positioned by the
+            // compositor via layer-shell.
+            if (!fullRep.appletRoot || !fullRep.appletRoot.popupAnchorItem) return;
+            Qt.callLater(() => {
+                if (!win || !win.visible || !win.screen) return;
+                var geo = win.screen.geometry;
+                if (geo === undefined) {
+                    geo = Qt.rect(win.screen.virtualX || 0, win.screen.virtualY || 0,
+                                  win.screen.width, win.screen.height);
+                }
+                if (!geo) return;
+                var screenW = geo.width;
+                var screenX = geo.x;
+                var rightEdge = screenX + screenW;
+                var offset = 8;
+                if ((win.x + win.width) > (rightEdge - offset)) {
+                    win.x = rightEdge - win.width - offset;
+                }
+            });
         }
     }
 
@@ -444,6 +602,149 @@ PlasmaExtras.Representation {
     }
 
     readonly property var paSinkModel: (appletRoot && appletRoot.paSinkModel) ? appletRoot.paSinkModel : null
+
+    // Playback streams (apps currently producing audio). Each item is a
+    // PulseAudioQt SinkInput with volume/muted/name/icon properties.
+    Volume.SinkInputModel {
+        id: sinkInputModel
+    }
+
+    // Output devices. The Plasma applet supplies paSinkModel; the standalone
+    // popover keeps its own model as a fallback.
+    Volume.SinkModel {
+        id: localSinkModel
+    }
+
+    readonly property var outputModel: fullRep.paSinkModel ? fullRep.paSinkModel : localSinkModel
+
+    property var volumeStreams: []
+    property var outputDevices: []
+    property var inputDevices: []
+    property bool volumeAppsExpanded: false
+    property string audioPickerMode: "" // "", "output", "input"
+
+    function streamProperty(stream, key) {
+        if (!stream || !stream.properties) return "";
+        var value = stream.properties[key];
+        return (value === undefined || value === null) ? "" : String(value);
+    }
+
+    // Utility streams (e.g. LinuxSoundboard's internal feeders) have no
+    // application name/binary, so they are hidden unless enabled in config.
+    function streamIsVirtual(stream) {
+        if (!stream) return true;
+        if (stream.virtualStream === true) return true;
+        var app = streamProperty(stream, "application.name");
+        var binary = streamProperty(stream, "application.process.binary");
+        return !app && !binary;
+    }
+
+    function streamDisplayName(stream) {
+        if (!stream) return i18n("Unknown app");
+        var name = streamProperty(stream, "application.name");
+        if (!name) name = streamProperty(stream, "application.process.binary");
+        if (!name) name = streamProperty(stream, "media.name");
+        if (!name && stream.client) name = stream.client.name || "";
+        if (!name) name = stream.name || "";
+        if (!name) return i18n("Unknown app");
+        name = name.replace(/[._]+/g, " ").replace(/\s+/g, " ").trim();
+        return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+
+    // Turn an app/binary/media name into a plausible icon-theme name.
+    // e.g. "Spotify" -> "spotify", "spotify.desktop" -> "spotify".
+    function sanitizedIconName(text) {
+        if (!text) return "";
+        var name = String(text).toLowerCase().trim();
+        if (name.endsWith(".desktop")) name = name.slice(0, -8);
+        name = name.replace(/\s+/g, "-").replace(/[^a-z0-9._-]/g, "");
+        return name;
+    }
+
+    function streamIconName(stream) {
+        if (!stream) return "applications-multimedia";
+        var icon = streamProperty(stream, "application.icon_name");
+        if (icon) return icon;
+        icon = stream.iconName || "";
+        if (icon) return icon;
+        var candidate = streamProperty(stream, "application.process.binary");
+        if (!candidate) candidate = streamProperty(stream, "application.name");
+        if (!candidate) candidate = streamProperty(stream, "media.name");
+        var themed = sanitizedIconName(candidate);
+        return themed || "applications-multimedia";
+    }
+
+    function refreshVolumeStreams() {
+        var streams = [];
+        var model = sinkInputModel;
+        if (model && model.count > 0) {
+            var role = model.KItemModels.KRoleNames.role("PulseObject");
+            if (role !== undefined && role >= 0) {
+                for (var i = 0; i < model.count; ++i) {
+                    var stream = model.data(model.index(i, 0), role);
+                    if (!stream) continue;
+                    if (!fullRep.showVirtualStreams && fullRep.streamIsVirtual(stream)) continue;
+                    streams.push(stream);
+                }
+            }
+        }
+        volumeStreams = streams;
+    }
+
+    function devicesFromModel(model, includeMonitors) {
+        var devices = [];
+        if (!model || model.count <= 0) return devices;
+        var role = model.KItemModels.KRoleNames.role("PulseObject");
+        if (role === undefined || role < 0) return devices;
+        for (var i = 0; i < model.count; ++i) {
+            var device = model.data(model.index(i, 0), role);
+            if (!device) continue;
+            if (!includeMonitors && String(device.name || "").endsWith(".monitor")) continue;
+            devices.push(device);
+        }
+        return devices;
+    }
+
+    function refreshAudioDevices() {
+        outputDevices = devicesFromModel(outputModel, false);
+        inputDevices = devicesFromModel(localSourceModel, false);
+    }
+
+    function deviceLabel(device) {
+        if (!device) return "";
+        var label = (device.description && device.description.length > 0)
+            ? device.description
+            : String(device.name || "");
+        return label.replace(/_+/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    Connections {
+        target: sinkInputModel
+        function onRowsInserted() { fullRep.refreshVolumeStreams(); }
+        function onRowsRemoved() { fullRep.refreshVolumeStreams(); }
+        function onModelReset() { fullRep.refreshVolumeStreams(); }
+    }
+
+    Connections {
+        target: localSourceModel
+        function onRowsInserted() { fullRep.refreshAudioDevices(); }
+        function onRowsRemoved() { fullRep.refreshAudioDevices(); }
+        function onModelReset() { fullRep.refreshAudioDevices(); }
+    }
+
+    Connections {
+        target: localSinkModel
+        function onRowsInserted() { fullRep.refreshAudioDevices(); }
+        function onRowsRemoved() { fullRep.refreshAudioDevices(); }
+        function onModelReset() { fullRep.refreshAudioDevices(); }
+    }
+
+    Connections {
+        target: fullRep.paSinkModel
+        function onRowsInserted() { fullRep.refreshAudioDevices(); }
+        function onRowsRemoved() { fullRep.refreshAudioDevices(); }
+        function onModelReset() { fullRep.refreshAudioDevices(); }
+    }
 
     Volume.SourceModel {
         id: localSourceModel
@@ -523,10 +824,13 @@ PlasmaExtras.Representation {
             if (fullRep.appletRoot && fullRep.appletRoot.expanded) {
                 slider1Item.syncFromSystem();
                 slider2Item.syncFromSystem();
+                fullRep.refreshVolumeStreams();
+                fullRep.refreshAudioDevices();
             } else {
                 fullRep.powerMenuOpen = false;
                 fullRep.isEditingTiles = false;
                 fullRep.activeSubView = "";
+                fullRep.audioPickerMode = "";
             }
         }
     }
@@ -535,14 +839,21 @@ PlasmaExtras.Representation {
         if (appletRoot && appletRoot.effectiveAccentColor) {
             return appletRoot.effectiveAccentColor;
         }
-        var cfg = (typeof Plasmoid !== "undefined" && Plasmoid.configuration) ? Plasmoid.configuration : null;
+        var cfg = configBackend;
         if (cfg && cfg.useCustomAccentColor && cfg.accentColor) {
             return cfg.accentColor;
         }
         return Kirigami.Theme.highlightColor;
     }
 
-    readonly property color oneUiTrackBg: containerScope ? containerScope.Kirigami.Theme.backgroundColor : Kirigami.Theme.backgroundColor
+    readonly property color oneUiTrackBg: {
+        if (typeof Md3Palette !== "undefined" && Md3Palette && Md3Palette.colors
+                && Md3Palette.colors.surface_container_high) {
+            return Md3Palette.colors.surface_container_high;
+        }
+        return containerScope ? containerScope.Kirigami.Theme.backgroundColor
+                              : Kirigami.Theme.backgroundColor;
+    }
 
     Layout.preferredWidth: snap(338.4) // 423px fizycznych: 18px lewy margines + 387px siatka kafelków + 18px prawy margines
     Layout.minimumWidth: Layout.preferredWidth
@@ -892,6 +1203,9 @@ PlasmaExtras.Representation {
                         radius: Math.round(height / 2)
 
                         readonly property bool isNightLightOn: {
+                            if (fullRep.daemonNightLightAvailable) {
+                                return fullRep.daemonNightLightActive;
+                            }
                             if (fullRep.manualNightLightActive) {
                                 return true;
                             }
@@ -927,6 +1241,11 @@ PlasmaExtras.Representation {
                         }
 
                         function toggleNightLight() {
+                            if (fullRep.daemonNightLightAvailable) {
+                                Backend.toggleNightLight();
+                                return;
+                            }
+
                             var nightTemp = (nightLightControl.targetTemperature > 0 && nightLightControl.targetTemperature < 6000)
                                             ? nightLightControl.targetTemperature
                                             : 3300;
@@ -982,19 +1301,23 @@ PlasmaExtras.Representation {
                         readonly property real handleWidth: fullRep.snap(2.4)  // 3px fizycznych
                         readonly property real handleHeight: fullRep.snap(36.0) // 45px fizycznych
                         readonly property real gapSize: fullRep.snap(5.6)       // 7px fizycznych
-                        readonly property real clampedValue: Math.max(0.0, Math.min(1.0, value))
-                        readonly property real handleX: width > handleWidth ? fullRep.snap(clampedValue * (width - handleWidth)) : 0
+                        // 1.0 = 100% mode, 1.5 = allow amplification up to 150%.
+                        readonly property real maxValue: fullRep.volumeMax / 100.0
+                        readonly property real clampedValue: Math.max(0.0, Math.min(maxValue, value))
+                        readonly property real normalizedValue: maxValue > 0 ? clampedValue / maxValue : 0.0
+                        readonly property real handleX: width > handleWidth ? fullRep.snap(normalizedValue * (width - handleWidth)) : 0
 
                         function syncFromSystem() {
                             if (isDragging) return;
                             var sink = fullRep.activeSink;
                             if (sink) {
-                                slider2Item.value = Math.max(0.0, Math.min(1.0, sink.volume / 65536.0));
+                                slider2Item.value = Math.max(0.0, Math.min(slider2Item.maxValue, sink.volume / 65536.0));
                             }
                         }
 
                         function applyVolume(ratio) {
-                            var clamped = Math.max(0.0, Math.min(1.0, ratio));
+                            var position = Math.max(0.0, Math.min(1.0, ratio));
+                            var clamped = position * slider2Item.maxValue;
                             slider2Item.value = clamped;
                             var sink = fullRep.activeSink;
                             if (sink) {
@@ -1086,7 +1409,7 @@ PlasmaExtras.Representation {
                             }
                             onWheel: (wheel) => {
                                 var step = wheel.angleDelta.y > 0 ? 0.05 : -0.05;
-                                slider2Item.applyVolume(slider2Item.value + step);
+                                slider2Item.applyVolume((slider2Item.value + step) / slider2Item.maxValue);
                             }
                         }
 
@@ -1098,7 +1421,7 @@ PlasmaExtras.Representation {
                             width: slider2Item.trackHeight
                             z: 3
 
-                            readonly property bool isOnBar: slider2Item.clampedValue > 0.85
+                            readonly property bool isOnBar: slider2Item.normalizedValue > 0.85
                             readonly property real normalX: slider2Item.width - width
                             readonly property real onBarX: Math.max(0, fill2.width - width - 2)
 
@@ -1116,11 +1439,15 @@ PlasmaExtras.Representation {
                                 anchors.centerIn: parent
                                 width: fullRep.snap(17.6)  // zmniejszone z 26 (22px fizyczne / 17.6 dp)
                                 height: fullRep.snap(17.6)
-                                source: Qt.resolvedUrl("icons/music_note.svg")
+                                source: (fullRep.activeSink && fullRep.activeSink.muted)
+                                        ? Qt.resolvedUrl("icons/volume_off.svg")
+                                        : Qt.resolvedUrl("icons/music_note.svg")
                                 isMask: true
-                                color: icon2Container.isOnBar
-                                       ? Kirigami.Theme.highlightedTextColor
-                                       : Kirigami.Theme.textColor
+                                color: (fullRep.activeSink && fullRep.activeSink.muted)
+                                       ? Kirigami.Theme.disabledTextColor
+                                       : (icon2Container.isOnBar
+                                          ? Kirigami.Theme.highlightedTextColor
+                                          : Kirigami.Theme.textColor)
                                 opacity: (fullRep.activeSink && fullRep.activeSink.muted) ? 0.45 : 1.0
                                 Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
                                 Behavior on color { ColorAnimation { duration: Kirigami.Units.shortDuration } }
@@ -1138,14 +1465,16 @@ PlasmaExtras.Representation {
                         }
                     }
 
-                    // Button: Equalizer / Sound settings
+                    // Button: expand the per-app volume list
                     Rectangle {
                         id: eqButton
                         Layout.preferredWidth: fullRep.snap(28.8) // 36px fizycznych
                         Layout.preferredHeight: fullRep.snap(28.8) // 36px fizycznych
                         radius: Math.round(height / 2)
 
-                        color: fullRep.oneUiTrackBg
+                        color: fullRep.volumeAppsExpanded
+                               ? fullRep.effectiveAccentColor
+                               : fullRep.oneUiTrackBg
 
                         Behavior on color { ColorAnimation { duration: Kirigami.Units.shortDuration } }
 
@@ -1162,7 +1491,10 @@ PlasmaExtras.Representation {
                             height: fullRep.snap(14.4) // 18px fizycznych
                             source: Qt.resolvedUrl("icons/equalizer.svg")
                             isMask: true
-                            color: Kirigami.Theme.textColor
+                            color: fullRep.volumeAppsExpanded
+                                   ? Kirigami.Theme.highlightedTextColor
+                                   : Kirigami.Theme.textColor
+                            Behavior on color { ColorAnimation { duration: Kirigami.Units.shortDuration } }
                         }
 
                         MouseArea {
@@ -1170,7 +1502,468 @@ PlasmaExtras.Representation {
                             anchors.fill: parent
                             hoverEnabled: true
                             onClicked: {
-                                KCMUtils.KCMLauncher.openSystemSettings("kcm_pulseaudio");
+                                fullRep.volumeAppsExpanded = !fullRep.volumeAppsExpanded;
+                                if (fullRep.volumeAppsExpanded) {
+                                    fullRep.refreshVolumeStreams();
+                                    fullRep.refreshAudioDevices();
+                                } else {
+                                    fullRep.audioPickerMode = "";
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Expanding list of apps currently playing audio
+                ColumnLayout {
+                    id: appVolumeSection
+                    Layout.fillWidth: true
+                    Layout.topMargin: fullRep.snap(3)
+                    spacing: fullRep.snap(5)
+                    visible: fullRep.volumeAppsExpanded
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: fullRep.snap(6)
+
+                        PlasmaComponents3.Label {
+                            text: i18n("App volume")
+                            font.family: "Google Sans Flex"
+                            font.pixelSize: fullRep.snap(10.4)
+                            font.weight: Font.DemiBold
+                            color: Kirigami.Theme.textColor
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        PlasmaComponents3.Label {
+                            visible: fullRep.volumeStreams.length > 0
+                            text: i18n("%1 playing", fullRep.volumeStreams.length)
+                            font.family: "Google Sans Flex"
+                            font.pixelSize: fullRep.snap(9.6)
+                            color: Kirigami.Theme.disabledTextColor
+                        }
+                    }
+
+                    PlasmaComponents3.Label {
+                        Layout.fillWidth: true
+                        visible: fullRep.volumeStreams.length === 0
+                        text: i18n("No apps playing audio")
+                        horizontalAlignment: Text.AlignHCenter
+                        topPadding: fullRep.snap(5)
+                        bottomPadding: fullRep.snap(5)
+                        font.family: "Google Sans Flex"
+                        font.pixelSize: fullRep.snap(10.4)
+                        color: Kirigami.Theme.disabledTextColor
+                    }
+
+                    ListView {
+                        id: appVolumeList
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.min(contentHeight, fullRep.snap(190))
+                        visible: count > 0
+                        clip: true
+                        spacing: fullRep.snap(4)
+                        interactive: contentHeight > height
+                        boundsBehavior: Flickable.StopAtBounds
+                        model: fullRep.volumeStreams
+
+                        delegate: Rectangle {
+                            id: appRow
+                            required property var modelData
+                            width: appVolumeList.width
+                            height: fullRep.snap(40)
+                            radius: fullRep.snap(10)
+                            color: fullRep.oneUiTrackBg
+                            opacity: (modelData && modelData.muted) ? 0.62 : 1.0
+                            Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
+
+                            readonly property real maxValue: fullRep.volumeMax / 100.0
+                            readonly property real rawVolume: Math.max(0.0, Math.min(maxValue,
+                                (modelData ? modelData.volume : 0) / 65536.0))
+                            readonly property real normalized: maxValue > 0 ? rawVolume / maxValue : 0.0
+                            readonly property real handleWidth: fullRep.snap(2.0)
+                            readonly property real handleX: appSlider.width > handleWidth
+                                ? normalized * (appSlider.width - handleWidth) : 0
+
+                            function setVolumeFromX(x) {
+                                if (!modelData) return;
+                                var ratio = appSlider.width > 0
+                                    ? Math.max(0.0, Math.min(1.0, x / appSlider.width)) : 0.0;
+                                var target = ratio * maxValue;
+                                if (modelData.muted && target > 0) {
+                                    modelData.muted = false;
+                                }
+                                modelData.volume = Math.round(target * 65536);
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: fullRep.snap(8)
+                                anchors.rightMargin: fullRep.snap(6)
+                                spacing: fullRep.snap(7)
+
+                                Kirigami.Icon {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    Layout.preferredWidth: fullRep.snap(17.6)
+                                    Layout.preferredHeight: fullRep.snap(17.6)
+                                    source: fullRep.streamIconName(appRow.modelData)
+                                    fallback: "applications-multimedia"
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: fullRep.snap(1)
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: fullRep.snap(4)
+
+                                        PlasmaComponents3.Label {
+                                            Layout.fillWidth: true
+                                            text: fullRep.streamDisplayName(appRow.modelData)
+                                            elide: Text.ElideRight
+                                            font.family: "Google Sans Flex"
+                                            font.pixelSize: fullRep.snap(10.4)
+                                            color: Kirigami.Theme.textColor
+                                        }
+
+                                        PlasmaComponents3.Label {
+                                            Layout.preferredWidth: fullRep.snap(32)
+                                            horizontalAlignment: Text.AlignRight
+                                            text: Math.round(appRow.rawVolume * 100) + "%"
+                                            font.family: "Google Sans Flex"
+                                            font.pixelSize: fullRep.snap(9.6)
+                                            color: Kirigami.Theme.disabledTextColor
+                                        }
+                                    }
+
+                                    Item {
+                                        id: appSlider
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: fullRep.snap(14)
+
+                                        Rectangle {
+                                            id: appTrack
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: parent.width
+                                            height: fullRep.snap(4)
+                                            radius: height / 2
+                                            color: Qt.rgba(Kirigami.Theme.textColor.r,
+                                                           Kirigami.Theme.textColor.g,
+                                                           Kirigami.Theme.textColor.b, 0.16)
+                                        }
+
+                                        Rectangle {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: Math.max(0, appRow.handleX)
+                                            height: appTrack.height
+                                            radius: appTrack.radius
+                                            color: fullRep.effectiveAccentColor
+                                        }
+
+                                        Rectangle {
+                                            x: appRow.handleX
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: appRow.handleWidth
+                                            height: fullRep.snap(12)
+                                            radius: width / 2
+                                            color: fullRep.effectiveAccentColor
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onPressed: (mouse) => appRow.setVolumeFromX(mouse.x)
+                                            onPositionChanged: (mouse) => {
+                                                if (pressed) appRow.setVolumeFromX(mouse.x);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    Layout.preferredWidth: fullRep.snap(22)
+                                    Layout.preferredHeight: fullRep.snap(22)
+                                    radius: Math.round(height / 2)
+                                    color: appMuteMouse.pressed
+                                           ? Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.18)
+                                           : (appMuteMouse.containsMouse
+                                              ? Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.10)
+                                              : "transparent")
+
+                                    Kirigami.Icon {
+                                        anchors.centerIn: parent
+                                        width: fullRep.snap(13.6)
+                                        height: fullRep.snap(13.6)
+                                        source: (modelData && modelData.muted)
+                                                ? Qt.resolvedUrl("icons/volume_off.svg")
+                                                : Qt.resolvedUrl("icons/music_note.svg")
+                                        isMask: true
+                                        color: (modelData && modelData.muted)
+                                               ? Kirigami.Theme.disabledTextColor
+                                               : Kirigami.Theme.textColor
+                                    }
+
+                                    MouseArea {
+                                        id: appMuteMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onClicked: {
+                                            if (modelData) {
+                                                modelData.muted = !modelData.muted;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Output / input device pickers + KDE audio settings
+                    RowLayout {
+                        id: audioDeviceRow
+                        Layout.fillWidth: true
+                        Layout.topMargin: fullRep.snap(4)
+                        spacing: fullRep.snap(5)
+
+                        component DeviceButton: Rectangle {
+                            id: deviceButton
+                            property string mode: ""
+                            property string caption: ""
+                            property string value: ""
+                            signal activated()
+
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: fullRep.snap(34)
+                            radius: fullRep.snap(10)
+                            color: fullRep.oneUiTrackBg
+                            border.width: fullRep.audioPickerMode === deviceButton.mode ? 1 : 0
+                            border.color: fullRep.effectiveAccentColor
+                            Behavior on border.width { NumberAnimation { duration: Kirigami.Units.shortDuration } }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: parent.radius
+                                color: Kirigami.Theme.textColor
+                                opacity: deviceMouse.pressed ? 0.16 : (deviceMouse.containsMouse ? 0.07 : 0)
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: fullRep.snap(8)
+                                anchors.rightMargin: fullRep.snap(6)
+                                spacing: fullRep.snap(5)
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 0
+
+                                    PlasmaComponents3.Label {
+                                        text: deviceButton.caption
+                                        font.family: "Google Sans Flex"
+                                        font.pixelSize: fullRep.snap(8.8)
+                                        color: Kirigami.Theme.disabledTextColor
+                                    }
+
+                                    PlasmaComponents3.Label {
+                                        Layout.fillWidth: true
+                                        text: deviceButton.value
+                                        elide: Text.ElideRight
+                                        font.family: "Google Sans Flex"
+                                        font.pixelSize: fullRep.snap(10.4)
+                                        color: Kirigami.Theme.textColor
+                                    }
+                                }
+
+                                Kirigami.Icon {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    Layout.preferredWidth: fullRep.snap(10.4)
+                                    Layout.preferredHeight: fullRep.snap(10.4)
+                                    source: Qt.resolvedUrl("icons/chevron_down.svg")
+                                    isMask: true
+                                    color: Kirigami.Theme.disabledTextColor
+                                    rotation: fullRep.audioPickerMode === deviceButton.mode ? 180 : 0
+                                    Behavior on rotation { NumberAnimation { duration: Kirigami.Units.shortDuration } }
+                                }
+                            }
+
+                            MouseArea {
+                                id: deviceMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: deviceButton.activated()
+                            }
+                        }
+
+                        DeviceButton {
+                            mode: "output"
+                            caption: i18n("Output")
+                            value: fullRep.deviceLabel(fullRep.activeSink)
+                            onActivated: {
+                                fullRep.audioPickerMode = (fullRep.audioPickerMode === "output") ? "" : "output";
+                                if (fullRep.audioPickerMode !== "") {
+                                    fullRep.refreshAudioDevices();
+                                }
+                            }
+                        }
+
+                        DeviceButton {
+                            mode: "input"
+                            caption: i18n("Input")
+                            value: fullRep.deviceLabel(fullRep.activeSource)
+                            onActivated: {
+                                fullRep.audioPickerMode = (fullRep.audioPickerMode === "input") ? "" : "input";
+                                if (fullRep.audioPickerMode !== "") {
+                                    fullRep.refreshAudioDevices();
+                                }
+                            }
+                        }
+
+                        // Small shortcut to the full KDE audio settings module.
+                        Rectangle {
+                            id: audioSettingsButton
+                            Layout.preferredWidth: fullRep.snap(28.8)
+                            Layout.preferredHeight: fullRep.snap(28.8)
+                            radius: Math.round(height / 2)
+                            color: fullRep.oneUiTrackBg
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: parent.radius
+                                color: Kirigami.Theme.textColor
+                                opacity: audioSettingsMouse.pressed ? 0.20 : (audioSettingsMouse.containsMouse ? 0.08 : 0)
+                            }
+
+                            Kirigami.Icon {
+                                anchors.centerIn: parent
+                                width: fullRep.snap(14.4)
+                                height: fullRep.snap(14.4)
+                                source: Qt.resolvedUrl("icons/settings.svg")
+                                isMask: true
+                                color: Kirigami.Theme.textColor
+                            }
+
+                            MouseArea {
+                                id: audioSettingsMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: KCMUtils.KCMLauncher.openSystemSettings("kcm_pulseaudio")
+                            }
+                        }
+                    }
+
+                    // Drop-down style device picker (expands in place so it
+                    // works inside the layer-shell popover)
+                    Rectangle {
+                        id: devicePicker
+                        Layout.fillWidth: true
+                        Layout.topMargin: fullRep.snap(2)
+                        visible: fullRep.audioPickerMode !== ""
+                        radius: fullRep.snap(10)
+                        color: fullRep.oneUiTrackBg
+                        implicitHeight: pickerColumn.implicitHeight + fullRep.snap(12)
+
+                        ColumnLayout {
+                            id: pickerColumn
+                            anchors.fill: parent
+                            anchors.margins: fullRep.snap(6)
+                            spacing: fullRep.snap(3)
+
+                            PlasmaComponents3.Label {
+                                text: fullRep.audioPickerMode === "input"
+                                      ? i18n("Input devices")
+                                      : i18n("Output devices")
+                                font.family: "Google Sans Flex"
+                                font.pixelSize: fullRep.snap(9.6)
+                                font.weight: Font.DemiBold
+                                color: Kirigami.Theme.disabledTextColor
+                            }
+
+                            ListView {
+                                id: deviceList
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: Math.min(contentHeight, fullRep.snap(132))
+                                clip: true
+                                spacing: fullRep.snap(1)
+                                interactive: contentHeight > height
+                                boundsBehavior: Flickable.StopAtBounds
+                                model: fullRep.audioPickerMode === "input"
+                                       ? fullRep.inputDevices
+                                       : fullRep.outputDevices
+
+                                delegate: Rectangle {
+                                    id: deviceRow
+                                    required property var modelData
+                                    width: deviceList.width
+                                    height: fullRep.snap(28)
+                                    radius: fullRep.snap(7)
+                                    color: pickerMouse.containsMouse
+                                           ? Qt.rgba(Kirigami.Theme.textColor.r,
+                                                     Kirigami.Theme.textColor.g,
+                                                     Kirigami.Theme.textColor.b, 0.09)
+                                           : "transparent"
+
+                                    readonly property bool selected: Boolean(modelData && modelData.default)
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: fullRep.snap(6)
+                                        anchors.rightMargin: fullRep.snap(6)
+                                        spacing: fullRep.snap(7)
+
+                                        // Radio indicator
+                                        Item {
+                                            Layout.alignment: Qt.AlignVCenter
+                                            Layout.preferredWidth: fullRep.snap(14)
+                                            Layout.preferredHeight: fullRep.snap(14)
+
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                radius: width / 2
+                                                color: "transparent"
+                                                border.width: fullRep.snap(1.4)
+                                                border.color: deviceRow.selected
+                                                              ? fullRep.effectiveAccentColor
+                                                              : Qt.rgba(Kirigami.Theme.textColor.r,
+                                                                        Kirigami.Theme.textColor.g,
+                                                                        Kirigami.Theme.textColor.b, 0.45)
+                                            }
+
+                                            Rectangle {
+                                                anchors.centerIn: parent
+                                                width: fullRep.snap(6)
+                                                height: fullRep.snap(6)
+                                                radius: width / 2
+                                                visible: deviceRow.selected
+                                                color: fullRep.effectiveAccentColor
+                                            }
+                                        }
+
+                                        PlasmaComponents3.Label {
+                                            Layout.fillWidth: true
+                                            text: fullRep.deviceLabel(deviceRow.modelData)
+                                            elide: Text.ElideRight
+                                            font.family: "Google Sans Flex"
+                                            font.pixelSize: fullRep.snap(10.4)
+                                            color: Kirigami.Theme.textColor
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: pickerMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onClicked: {
+                                            if (deviceRow.modelData) {
+                                                deviceRow.modelData.default = true;
+                                            }
+                                            fullRep.audioPickerMode = "";
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
